@@ -440,3 +440,12 @@ body {
 }
 
 .kana-inline { font-style: italic; opacity: .85; }
+
+/* "di (ji)" - the pronunciation sits quieter than the spelling. */
+.choice .alt { font-size: .68em; font-weight: 600; opacity: .65; margin-left: .35em; }
+.prompt .alt { font-size: .55em; opacity: .6; margin-left: .3em; }
+
+/* Three sets on the opening screen, so let it scroll on a short phone. */
+.menu-choices { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#homeScreen .menu-btn { padding: 20px 18px; }
+#homeScreen .menu-choices { gap: 12px; }

@@ -8,9 +8,11 @@ libraries, no build step — just three files that a browser opens directly.
 The app opens on a **set chooser**:
 
 - **Hiragana** — the 46 basic characters.
-- **Dakuten** — the same characters carrying a small mark that changes the sound.
+- **Dakuten** — the same hiragana carrying a small mark that changes the sound.
   か `ka` becomes が `ga`, は `ha` becomes ば `ba` or ぱ `pa`. 25 characters in
   five rows: g, z, d, b, p.
+- **Katakana** — the same 46 sounds as hiragana in different shapes, used for
+  words borrowed from other languages, foreign names and sound effects.
 
 Picking one opens the **main menu** with the two practice modes. Drill for as
 long as you like, tap **‹** to come back, and **‹** again to switch sets. Below
@@ -20,11 +22,19 @@ Each set keeps its own selection and its own score history, because no character
 appears in two sets. Turning off the `p` row while practising dakuten does not
 disturb your hiragana selection.
 
-### A note on ぢ and づ
+### Where the spelling is not the sound
 
-In everyday romaji these are written `ji` and `zu`, the same as じ and ず, because
-they sound identical in modern Japanese. The app spells them `di` and `du` so
-that every prompt has exactly one right answer. They are rare in real words.
+A few characters are written one way and pronounced another. Those show both, as
+**written (sounds like)**:
+
+| Character | Shown as | Why |
+| --- | --- | --- |
+| を | `wo (o)` | Written `wo`, but said `o`. It is the object particle. |
+| ぢ | `di (ji)` | Sounds the same as じ. Spelled `di` here so each prompt has one answer. |
+| づ | `du (zu)` | Sounds the same as ず, same reason. |
+| ヲ | `wo (o)` | The katakana equivalent, rare in modern writing. |
+
+Every other character just shows its romaji.
 
 ## Two modes
 

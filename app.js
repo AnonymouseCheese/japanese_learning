@@ -94,6 +94,12 @@
     return arr;
   }
 
+  // How a sound is written, with the real pronunciation after it where the two
+  // differ: "di (ji)", "wo (o)". Most characters just show their romaji.
+  function labelText(k) {
+    return k.sound ? k.romaji + ' (' + k.sound + ')' : k.romaji;
+  }
+
   function byKana(kana) {
     for (var i = 0; i < current.kana.length; i++) {
       if (current.kana[i].kana === kana) return current.kana[i];
@@ -259,6 +265,12 @@
       b.className = 'choice';
       b.dataset.romaji = opt.romaji;
       b.appendChild(document.createTextNode(opt.romaji));
+      if (opt.sound) {                                 // e.g. di (ji)
+        var alt = document.createElement('span');
+        alt.className = 'alt';
+        alt.textContent = '(' + opt.sound + ')';
+        b.appendChild(alt);
+      }
       var hint = document.createElement('span');       // number key, desktop only
       hint.className = 'hint';
       hint.textContent = i + 1;
@@ -284,7 +296,7 @@
     } else {
       s.wrong++;
       button.classList.add('wrong');
-      readFeedback.textContent = state.current.kana + '  is  "' + state.current.romaji + '"';
+      readFeedback.textContent = state.current.kana + '  is  "' + labelText(state.current) + '"';
       Array.prototype.forEach.call(choices.children, function (el) {
         if (el.dataset.romaji === state.current.romaji) el.classList.add('right');
       });
@@ -371,7 +383,7 @@
     state.current = pick();
     if (!state.current) { toMenu(); return; }
     state.lastKana = state.current.kana;
-    writeRomaji.textContent = state.current.romaji;
+    writeRomaji.textContent = labelText(state.current);
     ghost.textContent = state.current.kana;
     ghost.classList.remove('show');
     writeActions.classList.remove('hidden');

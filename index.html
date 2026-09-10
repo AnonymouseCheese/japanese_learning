@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 
@@ -28,15 +28,20 @@
     <button class="menu-btn" data-set="dakuten">
       <span class="menu-btn-kana">が ざ だ ば ぱ</span>
       <span class="menu-btn-main">Dakuten</span>
-      <span class="menu-btn-sub">25 characters carrying ゛ or ゜</span>
+      <span class="menu-btn-sub">25 hiragana carrying ゛ or ゜</span>
+    </button>
+    <button class="menu-btn" data-set="katakana">
+      <span class="menu-btn-kana">ア イ ウ エ オ</span>
+      <span class="menu-btn-main">Katakana</span>
+      <span class="menu-btn-sub">The same 46 sounds, for foreign words</span>
     </button>
   </div>
 
   <div class="menu-foot">
-    <p class="home-note">Dakuten are characters you already know with a small mark
-    added that changes the sound: か <span class="kana-inline">ka</span> becomes が
-    <span class="kana-inline">ga</span>, は <span class="kana-inline">ha</span>
-    becomes ば <span class="kana-inline">ba</span> or ぱ <span class="kana-inline">pa</span>.</p>
+    <p class="home-note">Hiragana writes native words and grammar. Katakana writes
+    the same sounds for words borrowed from other languages. Dakuten are hiragana
+    you already know with a mark that changes the sound — か
+    <span class="kana-inline">ka</span> becomes が <span class="kana-inline">ga</span>.</p>
   </div>
 </section>
 
@@ -138,7 +143,7 @@
   </div>
 </section>
 
-<script src="data.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="data.js?v=6"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
