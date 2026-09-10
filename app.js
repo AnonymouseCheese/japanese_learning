@@ -488,7 +488,27 @@
   }
 
   function rowCells(row) { return row.cells; }
-  function colCells(i) { return current.chart.map(function (r) { return r.cells[i]; }); }
+  function colCells(rows, i) { return rows.map(function (r) { return r.cells[i]; }); }
+
+  // The chart is drawn as one or more blocks. An ordinary set is a single
+  // unlabelled block; the combination set is one labelled block per ticked set,
+  // so its rows do not run together and each block gets its own column toggles.
+  function chartBlocks() {
+    if (!current.isCombo) return [{ title: null, rows: current.chart }];
+    var blocks = [];
+    SETS.forEach(function (set) {
+      if (set.isCombo || state.combo.indexOf(set.id) === -1) return;
+      blocks.push({ title: set.name, rows: set.chart });
+    });
+    return blocks;
+  }
+
+  function groupHeading(title) {
+    var h = document.createElement('div');
+    h.className = 'chart-group';
+    h.textContent = title;
+    return h;
+  }
 
   function makeHead(kind, label, cells, onTap) {
     var b = document.createElement('button');
@@ -526,7 +546,7 @@
       r.el.className = 'row-head ' + lineState(rowCells(r.row));
     });
     refs.cols.forEach(function (c) {
-      c.el.className = 'col-head ' + lineState(colCells(c.index));
+      c.el.className = 'col-head ' + lineState(colCells(c.rows, c.index));
     });
     updatePickerFoot();
   }
@@ -535,15 +555,20 @@
     chart.innerHTML = '';
     refs = { rows: [], cols: [], cells: {} };
 
-    // header: an empty corner, then a button per vowel column
-    chart.appendChild(document.createElement('div'));
-    VOWELS.forEach(function (v, i) {
-      var h = makeHead('col-head', v, colCells(i), function () { toggleLine(colCells(i)); });
-      refs.cols.push({ el: h, index: i });
-      chart.appendChild(h);
-    });
+    chartBlocks().forEach(function (block) {
+      if (block.title) chart.appendChild(groupHeading(block.title));
 
-    current.chart.forEach(function (row) {
+      // header: an empty corner, then a button per vowel column of this block
+      chart.appendChild(document.createElement('div'));
+      VOWELS.forEach(function (v, i) {
+        var h = makeHead('col-head', v, colCells(block.rows, i), function () {
+          toggleLine(colCells(block.rows, i));
+        });
+        refs.cols.push({ el: h, rows: block.rows, index: i });
+        chart.appendChild(h);
+      });
+
+      block.rows.forEach(function (row) {
       var head = makeHead('row-head', row.label, rowCells(row), function () { toggleLine(rowCells(row)); });
       refs.rows.push({ el: head, row: row });
       chart.appendChild(head);
@@ -575,8 +600,9 @@
           refreshChart();
         });
 
-        refs.cells[kana] = b;
-        chart.appendChild(b);
+          refs.cells[kana] = b;
+          chart.appendChild(b);
+        });
       });
     });
 
@@ -591,15 +617,18 @@
     var grid = $('refChart');
     grid.innerHTML = '';
 
-    grid.appendChild(document.createElement('div'));
-    VOWELS.forEach(function (v) {
-      var h = document.createElement('div');
-      h.className = 'col-head';
-      h.textContent = v;
-      grid.appendChild(h);
-    });
+    chartBlocks().forEach(function (block) {
+      if (block.title) grid.appendChild(groupHeading(block.title));
 
-    current.chart.forEach(function (row) {
+      grid.appendChild(document.createElement('div'));
+      VOWELS.forEach(function (v) {
+        var h = document.createElement('div');
+        h.className = 'col-head';
+        h.textContent = v;
+        grid.appendChild(h);
+      });
+
+      block.rows.forEach(function (row) {
       var head = document.createElement('div');
       head.className = 'row-head';
       head.textContent = row.label;
@@ -621,9 +650,10 @@
         var r = document.createElement('span');
         r.className = 'c-romaji';
         r.textContent = cell[1];
-        box.appendChild(k);
-        box.appendChild(r);
-        grid.appendChild(box);
+          box.appendChild(k);
+          box.appendChild(r);
+          grid.appendChild(box);
+        });
       });
     });
   }

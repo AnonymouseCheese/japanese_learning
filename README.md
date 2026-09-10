@@ -25,9 +25,10 @@ glues those charts together into one set, and all three modes then run across
 the lot. Untick down to two if you only want to mix hiragana and katakana. One
 set always stays ticked.
 
-The character picker shows the combined chart — hiragana's eleven rows, then
-dakuten's five, then katakana's eleven — so you can still switch off individual
-characters inside the mix.
+The character picker keeps the sets apart rather than running their rows
+together: one labelled block per ticked set, each with its own column buttons.
+So a column toggle in the hiragana block switches off あ か さ た な は ま や ら わ ん
+and leaves katakana alone. The reference chart is grouped the same way.
 
 ## Words
 
