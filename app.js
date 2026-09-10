@@ -9,7 +9,8 @@
   var current = SETS[0];
 
   var state = {
-    screen: 'home',            // home | menu | read | write | picker | words
+    screen: 'home',            // home | menu | read | write | picker | words | reference
+    chartFrom: 'read',         // which drill the reference chart was opened from
     combo: ['hiragana', 'dakuten', 'katakana'],   // ticked in the combination set
     wordRomaji: false,         // show the reading before you have answered?
     difficulty: 'easy',        // easy = wrong answers stay inside your selection
@@ -168,7 +169,8 @@
     read: $('readScreen'),
     write: $('writeScreen'),
     picker: $('pickerScreen'),
-    words: $('wordsScreen')
+    words: $('wordsScreen'),
+    reference: $('refScreen')
   };
 
   var readKana = $('readKana'), choices = $('choices'), readFeedback = $('readFeedback');
@@ -581,6 +583,78 @@
     updatePickerFoot();
   }
 
+  // ---------- reference chart ----------
+  // The same grid as the picker, but read-only: a place to re-ground yourself
+  // part way through a drill. Opening it abandons the current question rather
+  // than scoring it, so it cannot be used to look up the answer on screen.
+  function drawReference() {
+    var grid = $('refChart');
+    grid.innerHTML = '';
+
+    grid.appendChild(document.createElement('div'));
+    VOWELS.forEach(function (v) {
+      var h = document.createElement('div');
+      h.className = 'col-head';
+      h.textContent = v;
+      grid.appendChild(h);
+    });
+
+    current.chart.forEach(function (row) {
+      var head = document.createElement('div');
+      head.className = 'row-head';
+      head.textContent = row.label;
+      grid.appendChild(head);
+
+      row.cells.forEach(function (cell) {
+        if (!cell) {
+          var blank = document.createElement('div');
+          blank.className = 'cell-blank';
+          grid.appendChild(blank);
+          return;
+        }
+        var box = document.createElement('div');
+        box.className = 'cell ' + (state.off[cell[0]] ? 'off' : 'on');
+
+        var k = document.createElement('span');
+        k.className = 'c-kana';
+        k.textContent = cell[0];
+        var r = document.createElement('span');
+        r.className = 'c-romaji';
+        r.textContent = cell[1];
+        box.appendChild(k);
+        box.appendChild(r);
+        grid.appendChild(box);
+      });
+    });
+  }
+
+  function openChart() {
+    state.chartFrom = state.screen;
+    $('refTitle').textContent = current.name + ' chart';
+    drawReference();
+    show('reference');
+  }
+
+  // Coming back starts a fresh question - the one that was on screen is dropped,
+  // neither right nor wrong.
+  function closeChart() {
+    if (state.chartFrom === 'write') {
+      show('write');
+      nextWrite();
+      requestAnimationFrame(sizePad);
+    } else {
+      show('read');
+      nextRead();
+    }
+  }
+
+  all('[data-chart]').forEach(function (btn) {
+    btn.addEventListener('click', openChart);
+  });
+
+  $('refClose').addEventListener('click', closeChart);
+  $('refBack').addEventListener('click', closeChart);
+
   function updatePickerFoot() {
     $('pickerFoot').textContent = pool().length + ' of ' + current.kana.length + ' on';
   }
@@ -742,6 +816,10 @@
     }
     if (state.screen === 'picker') {
       if (e.key === 'Escape') toMenu();
+      return;
+    }
+    if (state.screen === 'reference') {
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeChart(); }
       return;
     }
     if (state.screen === 'words') {

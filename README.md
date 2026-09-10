@@ -58,7 +58,7 @@ those characters get sets of their own.
 None of this is tagged by hand — a word's set is worked out from its characters,
 so the lists cannot drift out of step.
 
-Picking one opens the **main menu** with the two practice modes. Drill for as
+Picking one opens the **main menu** with the practice modes. Drill for as
 long as you like, tap **‹** to come back, and **‹** again to switch sets. Below
 the modes is the character picker for whichever set you are in.
 
@@ -95,6 +95,17 @@ Every other character just shows its romaji.
 Progress is saved in the browser itself (localStorage), so it survives closing
 Safari. Characters you get wrong come up more often; getting one right again
 lowers its priority. The menu also lists the characters you miss most often.
+
+## The chart, mid-drill
+
+Identify and Write both carry a **chart** button in the top bar. It pauses the
+session and shows every character in the set with its romaji, switched-off ones
+drawn with a dashed outline — somewhere to re-ground yourself part way through
+without losing your place.
+
+Opening it **abandons the current question rather than scoring it**, so it can
+never be used to look up the answer that is on screen. You come back to a fresh
+question and your running score is untouched.
 
 ## Choosing what to practise
 

@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 
@@ -100,6 +100,7 @@
   <header class="bar">
     <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
     <span class="bar-title">Identify</span>
+    <span class="bar-actions"><button class="mini" data-chart>chart</button></span>
     <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
   </header>
   <div class="kana-box">
@@ -114,6 +115,7 @@
   <header class="bar">
     <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
     <span class="bar-title">Write</span>
+    <span class="bar-actions"><button class="mini" data-chart>chart</button></span>
     <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
   </header>
   <div class="prompt-row">
@@ -160,6 +162,22 @@
   </div>
 </section>
 
+<!-- ===== REFERENCE CHART ===== -->
+<section id="refScreen" class="screen hidden">
+  <header class="bar">
+    <button id="refClose" class="back" aria-label="Back to practice">‹</button>
+    <span class="bar-title" id="refTitle">Chart</span>
+  </header>
+  <p class="picker-hint">Everything currently being tested. Switched-off characters
+  are shown with a dashed outline.</p>
+  <div class="chart-scroll">
+    <div id="refChart" class="chart"></div>
+  </div>
+  <div class="actions">
+    <button id="refBack" class="btn btn-primary">Back to practice</button>
+  </div>
+</section>
+
 <!-- ===== CHARACTER PICKER ===== -->
 <section id="pickerScreen" class="screen hidden">
   <header class="bar">
@@ -187,8 +205,8 @@
   </div>
 </section>
 
-<script src="data.js?v=9"></script>
-<script src="words.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="data.js?v=10"></script>
+<script src="words.js?v=10"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>
