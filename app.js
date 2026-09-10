@@ -506,9 +506,9 @@
       remember(state.current.kana);
     }
     $('listDone').classList.add('hidden');
+    ghost.classList.remove('show');            // hide before loading the next answer in
     writeRomaji.textContent = labelText(state.current);
     ghost.textContent = state.current.kana;
-    ghost.classList.remove('show');
     writeActions.classList.remove('hidden');
     gradeActions.classList.add('hidden');
     clearPad();

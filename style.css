@@ -233,14 +233,18 @@ body {
   line-height: 1;
   color: var(--accent);
   opacity: 0;
-  transition: opacity .18s ease;
   pointer-events: none;
 }
 
 /* The answer is drawn as a hollow outline rather than a faint fill, so it is
    clearly visible while your own strokes still read on top of it. The plain
-   translucent fill stays as a fallback where text-stroke is unsupported. */
-.ghost.show { opacity: .35; }
+   translucent fill stays as a fallback where text-stroke is unsupported.
+
+   The fade sits on .show rather than on .ghost, so revealing eases in but
+   hiding is instant. With it on .ghost, grading loaded the next character
+   into the ghost while it was still fading out, and you caught a glimpse of
+   the answer before the pad blanked. */
+.ghost.show { opacity: .35; transition: opacity .18s ease; }
 
 @supports (-webkit-text-stroke: 1px black) {
   .ghost {
