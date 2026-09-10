@@ -9,7 +9,9 @@
   var current = SETS[0];
 
   var state = {
-    screen: 'home',            // home | menu | read | write | picker
+    screen: 'home',            // home | menu | read | write | picker | words
+    wordFilter: 'plain',       // plain | dakuten | all
+    wordRomaji: false,         // show the reading before you have answered?
     difficulty: 'easy',        // easy = wrong answers stay inside your selection
     off: {},                   // kana -> true means "switched off"
     stats: {},                 // kana -> { seen, wrong }
@@ -30,6 +32,8 @@
       state.stats = saved.stats || {};
       if (saved.difficulty) state.difficulty = saved.difficulty;
       if (saved.set) current = setById(saved.set);
+      if (saved.wordFilter) state.wordFilter = saved.wordFilter;
+      if (typeof saved.wordRomaji === 'boolean') state.wordRomaji = saved.wordRomaji;
       return;
     }
 
@@ -49,7 +53,8 @@
   function save() {
     try {
       localStorage.setItem(STORE, JSON.stringify({
-        off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id
+        off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id,
+        wordFilter: state.wordFilter, wordRomaji: state.wordRomaji
       }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
@@ -157,7 +162,8 @@
     menu: $('menuScreen'),
     read: $('readScreen'),
     write: $('writeScreen'),
-    picker: $('pickerScreen')
+    picker: $('pickerScreen'),
+    words: $('wordsScreen')
   };
 
   var readKana = $('readKana'), choices = $('choices'), readFeedback = $('readFeedback');
@@ -243,6 +249,10 @@
 
   all('[data-set]').forEach(function (btn) {
     btn.addEventListener('click', function () { chooseSet(btn.dataset.set); });
+  });
+
+  all('[data-words]').forEach(function (btn) {
+    btn.addEventListener('click', startWords);
   });
 
   $('goRead').addEventListener('click', function () { startPractice('read'); });
@@ -564,6 +574,131 @@
     setTimeout(function () { $('pickReset').textContent = 'Reset progress'; }, 1500);
   });
 
+
+  // ---------- words ----------
+  // A word "needs dakuten" if any of its characters carries a ゛ or ゜ mark. That
+  // is worked out from the dakuten set rather than tagged by hand in words.js.
+  var dakutenChars = {};
+  setById('dakuten').kana.forEach(function (k) { dakutenChars[k.kana] = true; });
+
+  WORDS.forEach(function (w) {
+    w.dakuten = false;
+    for (var i = 0; i < w.kana.length; i++) {
+      if (dakutenChars[w.kana.charAt(i)]) { w.dakuten = true; break; }
+    }
+  });
+
+  function wordPool() {
+    if (state.wordFilter === 'plain') {
+      return WORDS.filter(function (w) { return !w.dakuten; });
+    }
+    if (state.wordFilter === 'dakuten') {
+      return WORDS.filter(function (w) { return w.dakuten; });
+    }
+    return WORDS;
+  }
+
+  // Same weighting as the character drills: misses come back sooner.
+  function pickWord() {
+    var list = wordPool();
+    if (!list.length) return null;
+    if (list.length > 1 && state.lastKana) {
+      list = list.filter(function (w) { return w.kana !== state.lastKana; });
+    }
+    var weights = list.map(function (w) {
+      var st = stat(w.kana);
+      var n = 1 + st.wrong * 3;
+      if (st.seen === 0) n += 2;
+      return n;
+    });
+    var total = weights.reduce(function (a, b) { return a + b; }, 0);
+    var roll = Math.random() * total;
+    for (var i = 0; i < list.length; i++) {
+      roll -= weights[i];
+      if (roll <= 0) return list[i];
+    }
+    return list[list.length - 1];
+  }
+
+  function startWords() {
+    state.right = 0;
+    state.total = 0;
+    state.lastKana = null;
+    updateScore();
+    setWordFilter(state.wordFilter);
+    show('words');
+    nextWord();
+  }
+
+  function nextWord() {
+    state.current = pickWord();
+    if (!state.current) { toHome(); return; }
+    state.lastKana = state.current.kana;
+    $('wordKana').textContent = state.current.kana;
+    $('wordRomaji').textContent = state.wordRomaji ? state.current.romaji : '';
+    $('wordMeaning').textContent = '';
+    $('wordActions').classList.remove('hidden');
+    $('wordGrade').classList.add('hidden');
+  }
+
+  function revealWord() {
+    $('wordRomaji').textContent = state.current.romaji;
+    $('wordMeaning').textContent = state.current.meaning;
+    $('wordActions').classList.add('hidden');
+    $('wordGrade').classList.remove('hidden');
+  }
+
+  function gradeWord(correct) {
+    var st = stat(state.current.kana);
+    st.seen++;
+    state.total++;
+    if (correct) {
+      state.right++;
+      if (st.wrong > 0) st.wrong--;
+    } else {
+      st.wrong++;
+    }
+    updateScore();
+    save();
+    nextWord();
+  }
+
+  function setWordFilter(which) {
+    state.wordFilter = which;
+    $('wPlain').classList.toggle('on', which === 'plain');
+    $('wDak').classList.toggle('on', which === 'dakuten');
+    $('wAll').classList.toggle('on', which === 'all');
+    save();
+  }
+
+  function setWordRomaji(on) {
+    state.wordRomaji = on;
+    $('wRomaji').classList.toggle('on-chip', on);
+    $('wRomaji').textContent = on ? 'romaji on' : 'romaji off';
+    save();
+  }
+
+  $('wReveal').addEventListener('click', revealWord);
+  $('wGot').addEventListener('click', function () { gradeWord(true); });
+  $('wMissed').addEventListener('click', function () { gradeWord(false); });
+
+  ['wPlain', 'wDak', 'wAll'].forEach(function (id, i) {
+    var which = ['plain', 'dakuten', 'all'][i];
+    $(id).addEventListener('click', function () {
+      setWordFilter(which);
+      state.lastKana = null;
+      nextWord();
+    });
+  });
+
+  $('wRomaji').addEventListener('click', function () {
+    setWordRomaji(!state.wordRomaji);
+    // if the answer is already showing, leave it showing
+    if ($('wordGrade').classList.contains('hidden')) {
+      $('wordRomaji').textContent = state.wordRomaji ? state.current.romaji : '';
+    }
+  });
+
   // ---------- keyboard (desktop) ----------
   document.addEventListener('keydown', function (e) {
     if (state.screen === 'home') return;
@@ -573,6 +708,14 @@
     }
     if (state.screen === 'picker') {
       if (e.key === 'Escape') toMenu();
+      return;
+    }
+    if (state.screen === 'words') {
+      if (e.key === 'Escape') { toHome(); return; }
+      var shown = !$('wordGrade').classList.contains('hidden');
+      if (!shown && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); revealWord(); }
+      else if (shown && (e.key === 'y' || e.key === 'ArrowRight' || e.key === 'Enter')) { e.preventDefault(); gradeWord(true); }
+      else if (shown && (e.key === 'n' || e.key === 'ArrowLeft')) { e.preventDefault(); gradeWord(false); }
       return;
     }
     if (e.key === 'Escape') { toMenu(); return; }
@@ -612,6 +755,7 @@
 
   load();
   setDifficulty(state.difficulty);
+  setWordRomaji(state.wordRomaji);
   updateScore();
   toHome();
 })();

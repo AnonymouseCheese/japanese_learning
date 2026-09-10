@@ -13,6 +13,29 @@ The app opens on a **set chooser**:
   five rows: g, z, d, b, p.
 - **Katakana** — the same 46 sounds as hiragana in different shapes, used for
   words borrowed from other languages, foreign names and sound effects.
+- **Words** — reading practice on whole words rather than single characters.
+
+## Words
+
+A word appears in kana. You read it, tap **Show answer**, and the reading and the
+English meaning appear. Then you mark yourself right or wrong, the same as in
+Write mode.
+
+Three filters across the top:
+
+- **Plain** — words spelled with nothing but the 46 basic hiragana (111 words).
+- **Dakuten** — words containing at least one ゛ or ゜ character (47 words).
+- **All** — everything (158 words).
+
+The **romaji** chip in the corner decides whether the reading is shown up front
+or only after you answer. Off is the real practice; on is useful when you are
+still slow and want the reading there as a check.
+
+Every word is spelled using only the 46 hiragana and the 25 dakuten characters,
+so you never meet a character the app has not taught you. That rules out words
+needing the small っ or ゃ ゅ ょ — no がっこう, no でんしゃ — until those get a set
+of their own. Whether a word counts as plain or dakuten is worked out in code
+from its characters, so the filters cannot drift out of step with the list.
 
 Picking one opens the **main menu** with the two practice modes. Drill for as
 long as you like, tap **‹** to come back, and **‹** again to switch sets. Below
@@ -149,5 +172,6 @@ fresh download. Then pull down to refresh on the phone.
 | --- | --- |
 | `index.html` | The page structure — the four screens and their buttons. |
 | `style.css` | All the appearance. Follows your phone's light/dark setting. |
-| `data.js` | The character sets, their charts, and the look-alike groups. Adding katakana means adding one entry here. |
+| `data.js` | The character sets, their charts, and the look-alike groups. |
+| `words.js` | The word list for reading practice — kana, reading, meaning. |
 | `app.js` | The logic — screens, choosing characters, scoring, the drawing pad. |

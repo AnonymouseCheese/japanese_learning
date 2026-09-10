@@ -449,3 +449,41 @@ body {
 .menu-choices { overflow-y: auto; -webkit-overflow-scrolling: touch; }
 #homeScreen .menu-btn { padding: 20px 18px; }
 #homeScreen .menu-choices { gap: 12px; }
+
+/* ---------- words ---------- */
+.seg-wrap-tight { margin-bottom: 10px; }
+
+.word-box {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 20px 16px;
+  text-align: center;
+  background: var(--card);
+  border-radius: 20px;
+}
+
+.word-kana {
+  font-family: var(--kana);
+  font-size: clamp(40px, 11vw, 62px);
+  line-height: 1.35;
+  letter-spacing: .04em;
+  word-break: break-word;
+}
+
+.word-romaji {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: .03em;
+  min-height: 26px;
+}
+
+.word-meaning { font-size: 16px; color: var(--dim); min-height: 22px; }
+
+/* the romaji chip in the bar, when it is switched on */
+.mini.on-chip { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }

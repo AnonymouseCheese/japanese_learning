@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -34,6 +34,11 @@
       <span class="menu-btn-kana">ア イ ウ エ オ</span>
       <span class="menu-btn-main">Katakana</span>
       <span class="menu-btn-sub">The same 46 sounds, for foreign words</span>
+    </button>
+    <button class="menu-btn" data-words="1">
+      <span class="menu-btn-kana">ねこ · さかな · みず</span>
+      <span class="menu-btn-main">Words</span>
+      <span class="menu-btn-sub">Reading practice on whole words</span>
     </button>
   </div>
 
@@ -116,6 +121,40 @@
   </div>
 </section>
 
+<!-- ===== WORDS ===== -->
+<section id="wordsScreen" class="screen hidden">
+  <header class="bar">
+    <button class="back" data-back="home" aria-label="Back">‹</button>
+    <span class="bar-title">Words</span>
+    <span class="bar-actions">
+      <button id="wRomaji" class="mini">romaji</button>
+    </span>
+    <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
+  </header>
+
+  <div class="seg-wrap seg-wrap-tight">
+    <div class="seg">
+      <button id="wPlain" class="seg-btn">Plain</button>
+      <button id="wDak" class="seg-btn">Dakuten</button>
+      <button id="wAll" class="seg-btn">All</button>
+    </div>
+  </div>
+
+  <div class="word-box">
+    <div id="wordKana" class="word-kana">ねこ</div>
+    <div id="wordRomaji" class="word-romaji"></div>
+    <div id="wordMeaning" class="word-meaning"></div>
+  </div>
+
+  <div id="wordActions" class="actions">
+    <button id="wReveal" class="btn btn-primary">Show answer<span class="hint">space</span></button>
+  </div>
+  <div id="wordGrade" class="actions hidden">
+    <button id="wMissed" class="btn btn-bad">Missed it<span class="hint">n</span></button>
+    <button id="wGot" class="btn btn-good">Got it<span class="hint">y</span></button>
+  </div>
+</section>
+
 <!-- ===== CHARACTER PICKER ===== -->
 <section id="pickerScreen" class="screen hidden">
   <header class="bar">
@@ -143,7 +182,8 @@
   </div>
 </section>
 
-<script src="data.js?v=6"></script>
-<script src="app.js?v=6"></script>
+<script src="data.js?v=7"></script>
+<script src="words.js?v=7"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
