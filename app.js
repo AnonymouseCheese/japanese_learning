@@ -4,8 +4,12 @@
   var STORE = 'hiragana-practice-v2';
   var OLD_STORE = 'hiragana-practice-v1';
 
+  // Which set of characters is being practised. Everything below reads the
+  // active set rather than a fixed list, so adding katakana is a data change.
+  var current = SETS[0];
+
   var state = {
-    screen: 'menu',            // menu | read | write | picker
+    screen: 'home',            // home | menu | read | write | picker
     difficulty: 'easy',        // easy = wrong answers stay inside your selection
     off: {},                   // kana -> true means "switched off"
     stats: {},                 // kana -> { seen, wrong }
@@ -25,6 +29,7 @@
       state.off = saved.off || {};
       state.stats = saved.stats || {};
       if (saved.difficulty) state.difficulty = saved.difficulty;
+      if (saved.set) current = setById(saved.set);
       return;
     }
 
@@ -35,7 +40,7 @@
 
     state.stats = old.stats || {};
     if (old.rows) {
-      KANA.forEach(function (k) {
+      SETS[0].kana.forEach(function (k) {
         if (old.rows[k.row] === false) state.off[k.kana] = true;
       });
     }
@@ -44,7 +49,7 @@
   function save() {
     try {
       localStorage.setItem(STORE, JSON.stringify({
-        off: state.off, stats: state.stats, difficulty: state.difficulty
+        off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id
       }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
@@ -56,7 +61,7 @@
 
   // ---------- choosing a character ----------
   function pool() {
-    return KANA.filter(function (k) { return !state.off[k.kana]; });
+    return current.kana.filter(function (k) { return !state.off[k.kana]; });
   }
 
   // Characters you get wrong, and ones you have not seen yet, come up more often.
@@ -90,8 +95,8 @@
   }
 
   function byKana(kana) {
-    for (var i = 0; i < KANA.length; i++) {
-      if (KANA[i].kana === kana) return KANA[i];
+    for (var i = 0; i < current.kana.length; i++) {
+      if (current.kana[i].kana === kana) return current.kana[i];
     }
     return null;
   }
@@ -129,10 +134,10 @@
 
   // How many answer buttons to show, and what to build them from.
   function answerSet(target) {
-    var candidates = state.difficulty === 'hard' ? KANA : pool();
+    var candidates = state.difficulty === 'hard' ? current.kana : pool();
     // Two characters is the smallest question that means anything. If the
-    // selection is smaller than that, fall back to the full alphabet.
-    if (candidates.length < 2) candidates = KANA;
+    // selection is smaller than that, fall back to the whole set.
+    if (candidates.length < 2) candidates = current.kana;
     var count = Math.min(4, candidates.length);
     return shuffle(distractors(target, count - 1, candidates).concat([target]));
   }
@@ -142,6 +147,7 @@
   function all(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
   var screens = {
+    home: $('homeScreen'),
     menu: $('menuScreen'),
     read: $('readScreen'),
     write: $('writeScreen'),
@@ -165,9 +171,21 @@
     });
   }
 
+  function toHome() {
+    show('home');
+  }
+
   function toMenu() {
     show('menu');
     refreshMenu();
+  }
+
+  // Switching set clears nothing - progress is stored per character, and no
+  // character appears in two sets.
+  function chooseSet(id) {
+    current = setById(id);
+    save();
+    toMenu();
   }
 
   function startPractice(mode) {
@@ -187,7 +205,9 @@
 
   function refreshMenu() {
     var on = pool().length;
-    $('pickerCount').textContent = on + ' of ' + KANA.length + ' characters  ·  ' +
+    $('setName').textContent = current.name;
+    $('setSample').textContent = current.sample;
+    $('pickerCount').textContent = on + ' of ' + current.kana.length + ' characters  ·  ' +
       (state.difficulty === 'hard' ? 'Harder' : 'Easy');
     $('goRead').disabled = on === 0;
     $('goWrite').disabled = on === 0;
@@ -210,7 +230,13 @@
   }
 
   all('[data-back]').forEach(function (btn) {
-    btn.addEventListener('click', toMenu);
+    btn.addEventListener('click', function () {
+      if (btn.dataset.back === 'home') { toHome(); } else { toMenu(); }
+    });
+  });
+
+  all('[data-set]').forEach(function (btn) {
+    btn.addEventListener('click', function () { chooseSet(btn.dataset.set); });
   });
 
   $('goRead').addEventListener('click', function () { startPractice('read'); });
@@ -392,7 +418,7 @@
   }
 
   function rowCells(row) { return row.cells; }
-  function colCells(i) { return CHART.map(function (r) { return r.cells[i]; }); }
+  function colCells(i) { return current.chart.map(function (r) { return r.cells[i]; }); }
 
   function makeHead(kind, label, cells, onTap) {
     var b = document.createElement('button');
@@ -422,7 +448,7 @@
 
   // Repaint the on/off states without rebuilding the whole grid.
   function refreshChart() {
-    KANA.forEach(function (k) {
+    current.kana.forEach(function (k) {
       var cell = refs.cells[k.kana];
       if (cell) cell.className = 'cell ' + (state.off[k.kana] ? 'off' : 'on');
     });
@@ -447,7 +473,7 @@
       chart.appendChild(h);
     });
 
-    CHART.forEach(function (row) {
+    current.chart.forEach(function (row) {
       var head = makeHead('row-head', row.label, rowCells(row), function () { toggleLine(rowCells(row)); });
       refs.rows.push({ el: head, row: row });
       chart.appendChild(head);
@@ -488,7 +514,7 @@
   }
 
   function updatePickerFoot() {
-    $('pickerFoot').textContent = pool().length + ' of ' + KANA.length + ' on';
+    $('pickerFoot').textContent = pool().length + ' of ' + current.kana.length + ' on';
   }
 
   function setDifficulty(level) {
@@ -511,7 +537,7 @@
   });
 
   $('pickNone').addEventListener('click', function () {
-    KANA.forEach(function (k) { state.off[k.kana] = true; });
+    current.kana.forEach(function (k) { state.off[k.kana] = true; });
     save();
     refreshChart();
   });
@@ -528,8 +554,13 @@
 
   // ---------- keyboard (desktop) ----------
   document.addEventListener('keydown', function (e) {
-    if (state.screen === 'menu' || state.screen === 'picker') {
-      if (e.key === 'Escape' && state.screen === 'picker') toMenu();
+    if (state.screen === 'home') return;
+    if (state.screen === 'menu') {
+      if (e.key === 'Escape') toHome();
+      return;
+    }
+    if (state.screen === 'picker') {
+      if (e.key === 'Escape') toMenu();
       return;
     }
     if (e.key === 'Escape') { toMenu(); return; }
@@ -570,5 +601,5 @@
   load();
   setDifficulty(state.difficulty);
   updateScore();
-  toMenu();
+  toHome();
 })();

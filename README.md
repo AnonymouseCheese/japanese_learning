@@ -5,9 +5,26 @@ libraries, no build step — just three files that a browser opens directly.
 
 ## How it is laid out
 
-The app opens on a **main menu** with the two practice modes. Pick one, drill for
-as long as you like, and tap **‹** to come back. Below them is the character
-picker, showing how many of the 46 are currently switched on.
+The app opens on a **set chooser**:
+
+- **Hiragana** — the 46 basic characters.
+- **Dakuten** — the same characters carrying a small mark that changes the sound.
+  か `ka` becomes が `ga`, は `ha` becomes ば `ba` or ぱ `pa`. 25 characters in
+  five rows: g, z, d, b, p.
+
+Picking one opens the **main menu** with the two practice modes. Drill for as
+long as you like, tap **‹** to come back, and **‹** again to switch sets. Below
+the modes is the character picker for whichever set you are in.
+
+Each set keeps its own selection and its own score history, because no character
+appears in two sets. Turning off the `p` row while practising dakuten does not
+disturb your hiragana selection.
+
+### A note on ぢ and づ
+
+In everyday romaji these are written `ji` and `zu`, the same as じ and ず, because
+they sound identical in modern Japanese. The app spells them `di` and `du` so
+that every prompt has exactly one right answer. They are rare in real words.
 
 ## Two modes
 
@@ -122,5 +139,5 @@ fresh download. Then pull down to refresh on the phone.
 | --- | --- |
 | `index.html` | The page structure — the four screens and their buttons. |
 | `style.css` | All the appearance. Follows your phone's light/dark setting. |
-| `data.js` | The gojūon chart, the 46 characters, and the look-alike groups. |
+| `data.js` | The character sets, their charts, and the look-alike groups. Adding katakana means adding one entry here. |
 | `app.js` | The logic — screens, choosing characters, scoring, the drawing pad. |

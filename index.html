@@ -8,15 +8,46 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
-<!-- ===== MAIN MENU ===== -->
-<section id="menuScreen" class="screen">
+<!-- ===== WHICH SET OF CHARACTERS ===== -->
+<section id="homeScreen" class="screen">
   <div class="menu-head">
-    <h1 class="app-title">ひらがな</h1>
-    <p class="app-sub">hiragana practice</p>
+    <h1 class="app-title">日本語</h1>
+    <p class="app-sub">writing practice</p>
+  </div>
+
+  <div class="menu-choices">
+    <button class="menu-btn" data-set="hiragana">
+      <span class="menu-btn-kana">あ い う え お</span>
+      <span class="menu-btn-main">Hiragana</span>
+      <span class="menu-btn-sub">The 46 basic characters</span>
+    </button>
+    <button class="menu-btn" data-set="dakuten">
+      <span class="menu-btn-kana">が ざ だ ば ぱ</span>
+      <span class="menu-btn-main">Dakuten</span>
+      <span class="menu-btn-sub">25 characters carrying ゛ or ゜</span>
+    </button>
+  </div>
+
+  <div class="menu-foot">
+    <p class="home-note">Dakuten are characters you already know with a small mark
+    added that changes the sound: か <span class="kana-inline">ka</span> becomes が
+    <span class="kana-inline">ga</span>, は <span class="kana-inline">ha</span>
+    becomes ば <span class="kana-inline">ba</span> or ぱ <span class="kana-inline">pa</span>.</p>
+  </div>
+</section>
+
+<!-- ===== MAIN MENU ===== -->
+<section id="menuScreen" class="screen hidden">
+  <header class="bar">
+    <button class="back" data-back="home" aria-label="Back">‹</button>
+    <span class="bar-title" id="setName">Hiragana</span>
+  </header>
+  <div class="menu-head menu-head-sub">
+    <h1 class="app-title" id="setSample">あ い う え お</h1>
   </div>
 
   <div class="menu-choices">
@@ -44,7 +75,7 @@
 <!-- ===== IDENTIFY ===== -->
 <section id="readScreen" class="screen hidden">
   <header class="bar">
-    <button class="back" data-back aria-label="Back to menu">‹</button>
+    <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
     <span class="bar-title">Identify</span>
     <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
   </header>
@@ -58,7 +89,7 @@
 <!-- ===== WRITE ===== -->
 <section id="writeScreen" class="screen hidden">
   <header class="bar">
-    <button class="back" data-back aria-label="Back to menu">‹</button>
+    <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
     <span class="bar-title">Write</span>
     <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
   </header>
@@ -83,7 +114,7 @@
 <!-- ===== CHARACTER PICKER ===== -->
 <section id="pickerScreen" class="screen hidden">
   <header class="bar">
-    <button class="back" data-back aria-label="Back to menu">‹</button>
+    <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
     <span class="bar-title">Characters</span>
     <span class="bar-actions">
       <button id="pickAll" class="mini">All</button>
@@ -107,7 +138,7 @@
   </div>
 </section>
 
-<script src="data.js?v=4"></script>
-<script src="app.js?v=4"></script>
+<script src="data.js?v=5"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>
