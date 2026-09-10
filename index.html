@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
 
@@ -79,6 +79,11 @@
       <span class="menu-btn-main">Write</span>
       <span class="menu-btn-sub">See the sound, draw the character</span>
     </button>
+    <button id="goList" class="menu-btn">
+      <span class="menu-btn-kana">あ → い → う → え → お</span>
+      <span class="menu-btn-main">List</span>
+      <span class="menu-btn-sub" id="listCount">Write the chart in order</span>
+    </button>
     <button id="goWords" class="menu-btn">
       <span class="menu-btn-kana">ねこ → neko</span>
       <span class="menu-btn-main">Words</span>
@@ -114,13 +119,17 @@
 <section id="writeScreen" class="screen hidden">
   <header class="bar">
     <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
-    <span class="bar-title">Write</span>
-    <span class="bar-actions"><button class="mini" data-chart>chart</button></span>
+    <span class="bar-title" id="writeTitle">Write</span>
+    <span class="bar-actions">
+      <button id="btnPrev" class="mini hidden">‹ back</button>
+      <button class="mini" data-chart>chart</button>
+    </span>
     <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
   </header>
   <div class="prompt-row">
     <div class="prompt-label">write the character for</div>
     <div id="writeRomaji" class="prompt">ka</div>
+    <div id="writePos" class="prompt-pos hidden"></div>
   </div>
   <div class="pad-wrap">
     <div id="ghost" class="ghost">か</div>
@@ -133,6 +142,9 @@
   <div id="gradeActions" class="actions hidden">
     <button id="btnMissed" class="btn btn-bad">Missed it<span class="hint">n</span></button>
     <button id="btnGot" class="btn btn-good">Got it<span class="hint">y</span></button>
+  </div>
+  <div id="listDone" class="actions hidden">
+    <button id="listAgain" class="btn btn-primary">Start again</button>
   </div>
 </section>
 
@@ -207,8 +219,8 @@
   </div>
 </section>
 
-<script src="data.js?v=13"></script>
-<script src="words.js?v=13"></script>
-<script src="app.js?v=13"></script>
+<script src="data.js?v=14"></script>
+<script src="words.js?v=14"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>

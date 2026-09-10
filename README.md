@@ -15,8 +15,8 @@ The app opens on a **set chooser**:
   words borrowed from other languages, foreign names and sound effects.
 - **Combination** — several sets mixed together.
 
-Each one opens the same menu of three modes: **Identify**, **Write** and
-**Words**.
+Each one opens the same menu of four modes: **Identify**, **Write**, **List**
+and **Words**.
 
 ## Combination
 
@@ -81,7 +81,7 @@ A few characters are written one way and pronounced another. Those show both, as
 
 Every other character just shows its romaji.
 
-## Two modes
+## The modes
 
 - **Identify (か → ka)** — a character appears, you tap the sound it makes. The three
   wrong answers are picked from look-alike characters and the same row, so it
@@ -89,7 +89,17 @@ Every other character just shows its romaji.
 - **Write (ka → か)** — a sound appears, you draw the character with your finger,
   then tap **Show answer**. The real character appears behind your drawing as a
   hollow outline, so it stays clearly visible without hiding your own strokes,
-  and you mark yourself right or wrong.
+  and you mark yourself right or wrong. Which character comes next is weighted
+  toward what you are weakest on.
+- **List** — the same drawing pad, but walking straight down the chart in order:
+  あ, い, う, え, お, か, and so on. A counter shows where you are (`7 of 46`) and
+  a **‹ back** chip steps to the previous character. When you reach the end it
+  says so and offers to start again.
+
+  This is the one to use for building sequence memory — knowing that く comes
+  after き is a different skill from recognising く on its own. It follows your
+  selection, so with only the か row switched on it walks か き く け こ and
+  finishes.
 
 ## What it remembers
 

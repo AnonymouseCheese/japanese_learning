@@ -14,6 +14,8 @@
     combo: ['hiragana', 'dakuten', 'katakana'],   // ticked in the combination set
     wordRomaji: false,         // show the reading before you have answered?
     difficulty: 'easy',        // easy | medium | hard - where wrong answers come from
+    writeOrder: 'random',      // random | list - how Write picks the next character
+    listIndex: 0,              // position through the chart when running in order
     off: {},                   // kana -> true means "switched off"
     stats: {},                 // kana -> { seen, wrong }
     right: 0,
@@ -268,6 +270,25 @@
     refreshMenu();
   }
 
+  // Write runs either at random, weighted toward what you are weakest on, or
+  // straight down the chart in order. The list order is just pool(), which is
+  // already in chart order - switched-off characters simply drop out of it.
+  function startWrite(order) {
+    if (!pool().length) return;
+    state.writeOrder = order;
+    state.listIndex = 0;
+    state.right = 0;
+    state.total = 0;
+    forgetRecent();
+    updateScore();
+    $('writeTitle').textContent = order === 'list' ? 'List' : 'Write';
+    $('writePos').classList.toggle('hidden', order !== 'list');
+    $('btnPrev').classList.toggle('hidden', order !== 'list');
+    show('write');
+    nextWrite();
+    requestAnimationFrame(sizePad);
+  }
+
   function startPractice(mode) {
     if (!pool().length) return;
     state.right = 0;
@@ -275,12 +296,7 @@
     forgetRecent();
     updateScore();
     show(mode);
-    if (mode === 'read') {
-      nextRead();
-    } else {
-      nextWrite();
-      requestAnimationFrame(sizePad);
-    }
+    nextRead();
   }
 
   function refreshMenu() {
@@ -304,6 +320,10 @@
       state.difficulty.charAt(0).toUpperCase() + state.difficulty.slice(1);
     $('goRead').disabled = on === 0;
     $('goWrite').disabled = on === 0;
+    $('goList').disabled = on === 0;
+    $('listCount').textContent = on
+      ? 'Write all ' + on + ' in chart order'
+      : 'nothing switched on';
 
     var weak = Object.keys(state.stats)
       .filter(function (k) { return state.stats[k].wrong > 0; })
@@ -339,7 +359,8 @@
   });
 
   $('goRead').addEventListener('click', function () { startPractice('read'); });
-  $('goWrite').addEventListener('click', function () { startPractice('write'); });
+  $('goWrite').addEventListener('click', function () { startWrite('random'); });
+  $('goList').addEventListener('click', function () { startWrite('list'); });
   $('goPicker').addEventListener('click', function () { drawChart(); show('picker'); });
 
   // ---------- identify ----------
@@ -473,14 +494,33 @@
   });
 
   function nextWrite() {
-    state.current = pick();
-    if (!state.current) { toMenu(); return; }
-    remember(state.current.kana);
+    if (state.writeOrder === 'list') {
+      var seq = pool();
+      if (!seq.length) { toMenu(); return; }
+      if (state.listIndex >= seq.length) { showListDone(seq.length); return; }
+      state.current = seq[state.listIndex];
+      $('writePos').textContent = (state.listIndex + 1) + ' of ' + seq.length;
+    } else {
+      state.current = pick();
+      if (!state.current) { toMenu(); return; }
+      remember(state.current.kana);
+    }
+    $('listDone').classList.add('hidden');
     writeRomaji.textContent = labelText(state.current);
     ghost.textContent = state.current.kana;
     ghost.classList.remove('show');
     writeActions.classList.remove('hidden');
     gradeActions.classList.add('hidden');
+    clearPad();
+  }
+
+  function showListDone(total) {
+    writeRomaji.textContent = 'Done';
+    $('writePos').textContent = 'all ' + total + ' written';
+    ghost.classList.remove('show');
+    writeActions.classList.add('hidden');
+    gradeActions.classList.add('hidden');
+    $('listDone').classList.remove('hidden');
     clearPad();
   }
 
@@ -502,8 +542,19 @@
     }
     updateScore();
     save();
+    if (state.writeOrder === 'list') state.listIndex++;
     nextWrite();
   }
+
+  $('btnPrev').addEventListener('click', function () {
+    if (state.listIndex > 0) state.listIndex--;
+    nextWrite();
+  });
+
+  $('listAgain').addEventListener('click', function () {
+    state.listIndex = 0;
+    nextWrite();
+  });
 
   $('btnClear').addEventListener('click', clearPad);
   $('btnReveal').addEventListener('click', reveal);
