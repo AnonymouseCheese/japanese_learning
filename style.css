@@ -262,3 +262,37 @@ main { flex: 1 1 auto; min-height: 0; display: flex; }
 
 .weak { font-size: 14px; color: var(--dim); line-height: 1.7; margin-bottom: 18px; min-height: 20px; }
 .weak b { color: var(--ink); font-size: 15px; }
+
+/* ---------- desktop ---------- */
+/* On a wide screen, keep the app as a centred phone-width column instead of
+   letting the buttons stretch across the whole monitor. */
+@media (min-width: 560px) {
+  body {
+    max-width: 460px;
+    margin: 0 auto;
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+  }
+
+  .sheet { justify-content: center; align-items: center; }
+
+  .sheet-card {
+    max-width: 460px;
+    max-height: 80%;
+    border-radius: 22px;
+    padding-bottom: 20px;
+  }
+
+  .hint { display: inline; }
+}
+
+@media (hover: hover) {
+  .choice:hover:not(:disabled),
+  .btn:hover,
+  .row-toggle:hover { border-color: var(--accent); cursor: pointer; }
+
+  .tab:hover, .icon:hover, .clear:hover { cursor: pointer; color: var(--ink); }
+}
+
+/* Keyboard hints - only shown where there is a real keyboard. */
+.hint { display: none; font-size: 11px; color: var(--dim); opacity: .75; margin-left: 6px; }

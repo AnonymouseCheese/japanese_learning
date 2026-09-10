@@ -20,6 +20,21 @@ lowers its priority. The **☰** menu lets you practise only certain rows — us
 if you are working through あ, か, さ one at a time — and shows the characters
 you miss the most.
 
+## On a desktop
+
+The layout stays a centred phone-width column rather than stretching across the
+monitor. You can drill with the keyboard instead of the mouse:
+
+| Key | Does |
+| --- | --- |
+| `1` `2` `3` `4` | Pick that answer (read mode) |
+| `space` | Show the answer (write mode) |
+| `y` / `n` | Mark yourself right / wrong |
+| `c` | Clear the drawing |
+| `esc` | Close the settings menu |
+
+Drawing works with the mouse too — hold the button down and drag.
+
 ## Trying it on your computer first
 
 Double-click `index.html`. That's it. Make the window narrow and tall to see

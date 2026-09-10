@@ -133,10 +133,15 @@
 
     var options = shuffle(distractors(state.current, 3).concat([state.current]));
     choices.innerHTML = '';
-    options.forEach(function (opt) {
+    options.forEach(function (opt, i) {
       var b = document.createElement('button');
       b.className = 'choice';
-      b.textContent = opt.romaji;
+      b.dataset.romaji = opt.romaji;
+      b.appendChild(document.createTextNode(opt.romaji));
+      var hint = document.createElement('span');       // number key, desktop only
+      hint.className = 'hint';
+      hint.textContent = i + 1;
+      b.appendChild(hint);
       b.addEventListener('click', function () { answerRead(b, opt); });
       choices.appendChild(b);
     });
@@ -160,7 +165,7 @@
       button.classList.add('wrong');
       readFeedback.textContent = state.current.kana + '  is  "' + state.current.romaji + '"';
       Array.prototype.forEach.call(choices.children, function (el) {
-        if (el.textContent === state.current.romaji) el.classList.add('right');
+        if (el.dataset.romaji === state.current.romaji) el.classList.add('right');
       });
     }
     Array.prototype.forEach.call(choices.children, function (el) { el.disabled = true; });
@@ -363,6 +368,35 @@
     updateScore();
     drawWeak();
     save();
+  });
+
+  // ---------- keyboard (desktop) ----------
+  document.addEventListener('keydown', function (e) {
+    if (!sheet.classList.contains('hidden')) {
+      if (e.key === 'Escape') $('btnClose').click();
+      return;
+    }
+    if (state.mode === 'read') {
+      var n = parseInt(e.key, 10);
+      if (n >= 1 && n <= choices.children.length) {
+        e.preventDefault();
+        choices.children[n - 1].click();
+      }
+      return;
+    }
+    // write mode
+    var revealed = !gradeActions.classList.contains('hidden');
+    if (e.key === 'c') { e.preventDefault(); clearPad(); return; }
+    if (!revealed && (e.key === ' ' || e.key === 'Enter')) {
+      e.preventDefault();
+      reveal();
+    } else if (revealed && (e.key === 'y' || e.key === 'ArrowRight' || e.key === 'Enter')) {
+      e.preventDefault();
+      gradeWrite(true);
+    } else if (revealed && (e.key === 'n' || e.key === 'ArrowLeft')) {
+      e.preventDefault();
+      gradeWrite(false);
+    }
   });
 
   // ---------- go ----------
