@@ -6,6 +6,7 @@
   --ink: #f2f3f7;
   --dim: #9aa0b5;
   --accent: #6f8cff;
+  --accent-soft: rgba(111, 140, 255, .16);
   --good: #3fbf7f;
   --bad: #f0645f;
   --kana: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
@@ -20,6 +21,7 @@
     --ink: #1a1c24;
     --dim: #6b7186;
     --accent: #3d5ce0;
+    --accent-soft: rgba(61, 92, 224, .11);
   }
 }
 
@@ -280,29 +282,47 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* one narrow gutter for the row label, then the five vowel columns */
-.chart { display: grid; grid-template-columns: 26px repeat(5, 1fr); gap: 6px; }
+/* a gutter for the row buttons, then the five vowel columns */
+.chart { display: grid; grid-template-columns: 40px repeat(5, 1fr); gap: 6px; align-items: stretch; }
 
-.col-head {
-  text-align: center;
-  font-size: 12px;
-  color: var(--dim);
-  letter-spacing: .08em;
-  padding-bottom: 2px;
-}
-
-.row-head {
+/* Row and column buttons. Three states: the whole line is on, part of it is
+   on, or none of it is. The pip carries the state so the label stays legible. */
+.col-head, .row-head {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   padding: 0;
-  font-family: var(--kana);
-  font-size: 15px;
-  color: var(--dim);
-  background: transparent;
+  font: inherit;
   border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--dim);
   touch-action: manipulation;
+  transition: background .15s ease, color .15s ease, opacity .15s ease;
 }
+
+.col-head { font-size: 12px; letter-spacing: .08em; padding: 7px 0 5px; }
+.row-head { font-family: var(--kana); font-size: 17px; }
+
+.pip {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  background: transparent;
+  opacity: .55;
+  transition: background .15s ease, opacity .15s ease;
+}
+
+.col-head.all, .row-head.all { background: var(--accent-soft); color: var(--accent); }
+.col-head.all .pip, .row-head.all .pip { background: currentColor; opacity: 1; }
+
+.col-head.some, .row-head.some { background: var(--card-2); color: var(--ink); }
+.col-head.some .pip, .row-head.some .pip { border-color: var(--accent); opacity: 1; }
+
+.col-head.none, .row-head.none { opacity: .5; }
 
 .cell {
   display: flex;
@@ -318,6 +338,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 12px;
   touch-action: manipulation;
+  transition: opacity .15s ease, border-color .15s ease;
 }
 
 .cell .c-kana { font-family: var(--kana); font-size: 26px; line-height: 1; }
@@ -363,7 +384,8 @@ body {
   .link-btn:hover,
   .cell:hover { border-color: var(--accent); cursor: pointer; }
 
-  .back:hover, .mini:hover, .clear:hover, .row-head:hover { cursor: pointer; color: var(--ink); }
+  .back:hover, .mini:hover, .clear:hover { cursor: pointer; color: var(--ink); }
+  .row-head:hover, .col-head:hover { cursor: pointer; opacity: 1; }
 }
 
 /* ---------- easy / harder switch ---------- */

@@ -381,28 +381,75 @@
 
   // ---------- character picker ----------
   var chart = $('chart');
+  var refs = { rows: [], cols: [], cells: {} };
 
-  function isRowOn(row) {
-    return row.cells.some(function (c) { return c && !state.off[c[0]]; });
+  // How much of a line is switched on: all of it, some of it, or none.
+  function lineState(cells) {
+    var real = cells.filter(Boolean);
+    var on = real.filter(function (c) { return !state.off[c[0]]; }).length;
+    if (on === 0) return 'none';
+    return on === real.length ? 'all' : 'some';
+  }
+
+  function rowCells(row) { return row.cells; }
+  function colCells(i) { return CHART.map(function (r) { return r.cells[i]; }); }
+
+  function makeHead(kind, label, cells, onTap) {
+    var b = document.createElement('button');
+    b.className = kind + ' ' + lineState(cells);
+    var text = document.createElement('span');
+    text.textContent = label;
+    var pip = document.createElement('span');
+    pip.className = 'pip';
+    b.appendChild(text);
+    b.appendChild(pip);
+    b.addEventListener('click', onTap);
+    return b;
+  }
+
+  // Tapping a row or column switches all of it on, unless it is already
+  // entirely on - then it switches all of it off. A half-on line fills up,
+  // which is what you usually want mid-way through picking.
+  function toggleLine(cells) {
+    var turnOn = lineState(cells) !== 'all';
+    cells.forEach(function (c) {
+      if (!c) return;
+      if (turnOn) { delete state.off[c[0]]; } else { state.off[c[0]] = true; }
+    });
+    save();
+    refreshChart();
+  }
+
+  // Repaint the on/off states without rebuilding the whole grid.
+  function refreshChart() {
+    KANA.forEach(function (k) {
+      var cell = refs.cells[k.kana];
+      if (cell) cell.className = 'cell ' + (state.off[k.kana] ? 'off' : 'on');
+    });
+    refs.rows.forEach(function (r) {
+      r.el.className = 'row-head ' + lineState(rowCells(r.row));
+    });
+    refs.cols.forEach(function (c) {
+      c.el.className = 'col-head ' + lineState(colCells(c.index));
+    });
+    updatePickerFoot();
   }
 
   function drawChart() {
     chart.innerHTML = '';
+    refs = { rows: [], cols: [], cells: {} };
 
-    // header: an empty corner, then the vowel column labels
+    // header: an empty corner, then a button per vowel column
     chart.appendChild(document.createElement('div'));
-    VOWELS.forEach(function (v) {
-      var h = document.createElement('div');
-      h.className = 'col-head';
-      h.textContent = v;
+    VOWELS.forEach(function (v, i) {
+      var h = makeHead('col-head', v, colCells(i), function () { toggleLine(colCells(i)); });
+      refs.cols.push({ el: h, index: i });
       chart.appendChild(h);
     });
 
     CHART.forEach(function (row) {
-      var head = document.createElement('button');
-      head.className = 'row-head';
-      head.textContent = row.label;
-      head.addEventListener('click', function () { toggleRow(row); });
+      var head = makeHead('row-head', row.label, rowCells(row), function () { toggleLine(rowCells(row)); });
+      refs.rows.push({ el: head, row: row });
       chart.appendChild(head);
 
       row.cells.forEach(function (cell) {
@@ -428,28 +475,16 @@
 
         b.addEventListener('click', function () {
           if (state.off[kana]) { delete state.off[kana]; } else { state.off[kana] = true; }
-          b.className = 'cell ' + (state.off[kana] ? 'off' : 'on');
           save();
-          updatePickerFoot();
+          refreshChart();
         });
 
+        refs.cells[kana] = b;
         chart.appendChild(b);
       });
     });
 
     updatePickerFoot();
-  }
-
-  // Tapping the row label switches the whole row off, or back on if any of it
-  // is already off.
-  function toggleRow(row) {
-    var turnOff = isRowOn(row);
-    row.cells.forEach(function (c) {
-      if (!c) return;
-      if (turnOff) { state.off[c[0]] = true; } else { delete state.off[c[0]]; }
-    });
-    save();
-    drawChart();
   }
 
   function updatePickerFoot() {
@@ -472,13 +507,13 @@
   $('pickAll').addEventListener('click', function () {
     state.off = {};
     save();
-    drawChart();
+    refreshChart();
   });
 
   $('pickNone').addEventListener('click', function () {
     KANA.forEach(function (k) { state.off[k.kana] = true; });
     save();
-    drawChart();
+    refreshChart();
   });
 
   $('pickReset').addEventListener('click', function () {
