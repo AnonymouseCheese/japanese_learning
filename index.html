@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hiragana">
+<meta name="theme-color" content="#12131a">
+<title>Hiragana Practice</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="tabs" role="tablist">
+    <button id="tabRead" class="tab is-on" role="tab">Read か → ka</button>
+    <button id="tabWrite" class="tab" role="tab">Write ka → か</button>
+  </div>
+  <div class="topbar">
+    <div class="score"><span id="scoreRight">0</span> / <span id="scoreTotal">0</span></div>
+    <button id="btnSettings" class="icon" aria-label="Settings">☰</button>
+  </div>
+</header>
+
+<main>
+  <!-- READ MODE -->
+  <section id="readPane" class="pane">
+    <div class="kana-box">
+      <div id="readKana" class="kana">あ</div>
+    </div>
+    <div id="choices" class="choices"></div>
+    <div id="readFeedback" class="feedback"></div>
+  </section>
+
+  <!-- WRITE MODE -->
+  <section id="writePane" class="pane hidden">
+    <div class="prompt-row">
+      <div class="prompt-label">write the character for</div>
+      <div id="writeRomaji" class="prompt">ka</div>
+    </div>
+    <div class="pad-wrap">
+      <div id="ghost" class="ghost">か</div>
+      <canvas id="pad"></canvas>
+      <button id="btnClear" class="clear" aria-label="Clear">clear</button>
+    </div>
+    <div id="writeActions" class="actions">
+      <button id="btnReveal" class="btn btn-primary">Show answer</button>
+    </div>
+    <div id="gradeActions" class="actions hidden">
+      <button id="btnMissed" class="btn btn-bad">Missed it</button>
+      <button id="btnGot" class="btn btn-good">Got it</button>
+    </div>
+  </section>
+</main>
+
+<!-- SETTINGS -->
+<div id="sheet" class="sheet hidden">
+  <div class="sheet-card">
+    <h2>Practice these rows</h2>
+    <div id="rowList" class="rows"></div>
+    <div class="sheet-buttons">
+      <button id="btnAllRows" class="btn btn-ghost">Select all</button>
+      <button id="btnReset" class="btn btn-ghost">Reset progress</button>
+    </div>
+    <div id="weakList" class="weak"></div>
+    <button id="btnClose" class="btn btn-primary wide">Done</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
