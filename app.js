@@ -6,6 +6,7 @@
 
   var state = {
     screen: 'menu',            // menu | read | write | picker
+    difficulty: 'easy',        // easy = wrong answers stay inside your selection
     off: {},                   // kana -> true means "switched off"
     stats: {},                 // kana -> { seen, wrong }
     right: 0,
@@ -23,6 +24,7 @@
     if (saved) {
       state.off = saved.off || {};
       state.stats = saved.stats || {};
+      if (saved.difficulty) state.difficulty = saved.difficulty;
       return;
     }
 
@@ -41,7 +43,9 @@
 
   function save() {
     try {
-      localStorage.setItem(STORE, JSON.stringify({ off: state.off, stats: state.stats }));
+      localStorage.setItem(STORE, JSON.stringify({
+        off: state.off, stats: state.stats, difficulty: state.difficulty
+      }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
 
@@ -92,19 +96,24 @@
     return null;
   }
 
-  // Wrong answers come from look-alikes and same-row neighbours where possible,
-  // so the choice is a real test rather than an obvious one. They are drawn from
-  // the whole alphabet, not just the switched-on characters - otherwise turning
-  // on only one row would leave nothing to choose between.
-  function distractors(target, n) {
+  // Wrong answers are drawn from `candidates` - on Easy that is only the
+  // characters you switched on, so narrowing to one row keeps the whole question
+  // inside that row. Within the candidates, look-alikes and same-row neighbours
+  // are preferred over random ones so the choice still tests something.
+  function distractors(target, n, candidates) {
+    var allowed = {};
+    candidates.forEach(function (k) { allowed[k.kana] = true; });
+
     var near = [];
     LOOKALIKES.forEach(function (group) {
       if (group.indexOf(target.kana) !== -1) near = near.concat(group);
     });
-    var sameRow = KANA.filter(function (k) { return k.row === target.row; })
-                      .map(function (k) { return k.kana; });
-    var everything = KANA.map(function (k) { return k.kana; });
-    var ordered = shuffle(near).concat(shuffle(sameRow)).concat(shuffle(everything));
+    near = near.filter(function (kana) { return allowed[kana]; });
+
+    var sameRow = candidates.filter(function (k) { return k.row === target.row; })
+                            .map(function (k) { return k.kana; });
+    var rest = candidates.map(function (k) { return k.kana; });
+    var ordered = shuffle(near).concat(shuffle(sameRow)).concat(shuffle(rest));
 
     var out = [];
     var used = {};
@@ -116,6 +125,16 @@
       out.push(hit);
     }
     return out;
+  }
+
+  // How many answer buttons to show, and what to build them from.
+  function answerSet(target) {
+    var candidates = state.difficulty === 'hard' ? KANA : pool();
+    // Two characters is the smallest question that means anything. If the
+    // selection is smaller than that, fall back to the full alphabet.
+    if (candidates.length < 2) candidates = KANA;
+    var count = Math.min(4, candidates.length);
+    return shuffle(distractors(target, count - 1, candidates).concat([target]));
   }
 
   // ---------- elements ----------
@@ -168,7 +187,8 @@
 
   function refreshMenu() {
     var on = pool().length;
-    $('pickerCount').textContent = on + ' of ' + KANA.length + ' characters';
+    $('pickerCount').textContent = on + ' of ' + KANA.length + ' characters  ·  ' +
+      (state.difficulty === 'hard' ? 'Harder' : 'Easy');
     $('goRead').disabled = on === 0;
     $('goWrite').disabled = on === 0;
 
@@ -206,7 +226,7 @@
     readKana.textContent = state.current.kana;
     readFeedback.textContent = '';
 
-    var options = shuffle(distractors(state.current, 3).concat([state.current]));
+    var options = answerSet(state.current);
     choices.innerHTML = '';
     options.forEach(function (opt, i) {
       var b = document.createElement('button');
@@ -436,6 +456,19 @@
     $('pickerFoot').textContent = pool().length + ' of ' + KANA.length + ' on';
   }
 
+  function setDifficulty(level) {
+    state.difficulty = level;
+    $('diffEasy').classList.toggle('on', level === 'easy');
+    $('diffHard').classList.toggle('on', level === 'hard');
+    $('diffNote').textContent = level === 'easy'
+      ? 'Identify only offers sounds from the characters you switched on. Turn on one row and the whole question stays inside that row.'
+      : 'Identify can offer any of the 46 sounds as a wrong answer, even ones you have not switched on.';
+    save();
+  }
+
+  $('diffEasy').addEventListener('click', function () { setDifficulty('easy'); });
+  $('diffHard').addEventListener('click', function () { setDifficulty('hard'); });
+
   $('pickAll').addEventListener('click', function () {
     state.off = {};
     save();
@@ -500,6 +533,7 @@
   });
 
   load();
+  setDifficulty(state.difficulty);
   updateScore();
   toMenu();
 })();

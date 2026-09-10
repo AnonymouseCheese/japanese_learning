@@ -32,9 +32,23 @@ with the gaps left blank where a character does not exist (there is no "yi").
 
 Tap any character to switch it on or off. Tap a row label (あ, か, さ …) to do
 the whole row at once — useful when you are working through one line at a time.
-**All** and **None** are in the top corner. Only switched-on characters are asked,
-but the wrong answers in Identify are still drawn from the full alphabet, so
-narrowing down to one row does not make the choices trivially easy.
+**All** and **None** are in the top corner.
+
+### Easy or Harder
+
+On the same screen is a switch for where the *wrong* answers come from:
+
+- **Easy** (the default) — the wrong answers are only ever characters you have
+  switched on. Turn on the か row alone and every question stays inside か き く
+  け こ, which is what you want while you are still learning a row.
+- **Harder** — the wrong answers can be any of the 46, including characters you
+  have not switched on yet.
+
+Either way, within whatever it is allowed to use, look-alike characters are
+preferred over random ones — so あ tends to be offered against お and む.
+
+If your selection is smaller than four characters, Identify simply shows fewer
+buttons rather than padding the question out with characters you turned off.
 
 ## On a desktop
 

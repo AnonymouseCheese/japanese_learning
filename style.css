@@ -365,3 +365,31 @@ body {
 
   .back:hover, .mini:hover, .clear:hover, .row-head:hover { cursor: pointer; color: var(--ink); }
 }
+
+/* ---------- easy / harder switch ---------- */
+.seg-wrap { flex: 0 0 auto; margin-bottom: 14px; }
+
+.seg {
+  display: flex;
+  gap: 4px;
+  background: var(--card-2);
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.seg-btn {
+  flex: 1;
+  padding: 10px 6px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  touch-action: manipulation;
+}
+
+.seg-btn.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+
+.seg-note { margin: 8px 2px 0; font-size: 12px; color: var(--dim); line-height: 1.5; min-height: 32px; }
