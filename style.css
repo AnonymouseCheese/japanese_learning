@@ -304,7 +304,7 @@ body {
 }
 
 .col-head { font-size: 12px; letter-spacing: .08em; padding: 7px 0 5px; }
-.row-head { font-family: var(--kana); font-size: 17px; }
+.row-head { font-size: 14px; font-weight: 600; letter-spacing: .06em; }
 
 .pip {
   width: 5px;
@@ -322,7 +322,8 @@ body {
 .col-head.some, .row-head.some { background: var(--card-2); color: var(--ink); }
 .col-head.some .pip, .row-head.some .pip { border-color: var(--accent); opacity: 1; }
 
-.col-head.none, .row-head.none { opacity: .5; }
+.col-head.none, .row-head.none { opacity: .8; }
+.col-head.none .pip, .row-head.none .pip { opacity: .4; }
 
 .cell {
   display: flex;
@@ -343,9 +344,18 @@ body {
 
 .cell .c-kana { font-family: var(--kana); font-size: 26px; line-height: 1; }
 .cell .c-romaji { font-size: 10px; color: var(--dim); letter-spacing: .02em; }
+/* "Off" is shown with a dashed outline and an empty background rather than by
+   fading the cell out - the character has to stay readable either way. */
 .cell.on { border-color: var(--accent); }
-.cell.off { opacity: .32; }
+
+.cell.off {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--line);
+}
+
 .cell.off .c-kana { color: var(--dim); }
+.cell.off .c-romaji { opacity: .75; }
 .cell-blank { aspect-ratio: 1 / 1; }
 
 .picker-foot {

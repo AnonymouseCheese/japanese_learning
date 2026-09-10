@@ -31,8 +31,10 @@ the vowels `a i u e o` across the top, one row per consonant line down the side,
 with the gaps left blank where a character does not exist (there is no "yi").
 
 Tap any character to switch it on or off. Down the left is a button per row
-(あ, か, さ …) and across the top one per vowel column — tap either to switch
-that whole line. A small dot on each shows its state: filled means the line is
+(`k`, `s`, `t` …, with `–` for the vowel row that has no consonant) and across
+the top one per vowel column — tap either to switch that whole line. Switched-off
+characters are drawn with a dashed outline rather than faded out, so you can
+still read them. A small dot on each shows its state: filled means the line is
 entirely on, an outline means part of it is, and faded means none of it is.
 
 Tapping a line that is only half on fills it up rather than emptying it, which
