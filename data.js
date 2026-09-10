@@ -93,6 +93,18 @@ var SETS = [
 
 SETS.forEach(function (set) { set.kana = flattenChart(set.chart); });
 
+// Combination has no chart of its own. It is assembled from whichever sets are
+// ticked, each time you open it.
+SETS.push({
+  id: 'combo',
+  name: 'Combination',
+  sample: 'あ が ア',
+  blurb: 'Practise several sets together',
+  chart: [],
+  kana: [],
+  isCombo: true
+});
+
 function setById(id) {
   for (var i = 0; i < SETS.length; i++) {
     if (SETS[i].id === id) return SETS[i];

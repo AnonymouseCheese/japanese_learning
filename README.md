@@ -13,7 +13,21 @@ The app opens on a **set chooser**:
   five rows: g, z, d, b, p.
 - **Katakana** — the same 46 sounds as hiragana in different shapes, used for
   words borrowed from other languages, foreign names and sound effects.
-- **Words** — reading practice on whole words rather than single characters.
+- **Combination** — several sets mixed together.
+
+Each one opens the same menu of three modes: **Identify**, **Write** and
+**Words**.
+
+## Combination
+
+Combination has no characters of its own. Ticking Hiragana, Dakuten or Katakana
+glues those charts together into one set, and all three modes then run across
+the lot. Untick down to two if you only want to mix hiragana and katakana. One
+set always stays ticked.
+
+The character picker shows the combined chart — hiragana's eleven rows, then
+dakuten's five, then katakana's eleven — so you can still switch off individual
+characters inside the mix.
 
 ## Words
 
@@ -21,21 +35,28 @@ A word appears in kana. You read it, tap **Show answer**, and the reading and th
 English meaning appear. Then you mark yourself right or wrong, the same as in
 Write mode.
 
-Three filters across the top:
+Which words you get depends on the set you are in:
 
-- **Plain** — words spelled with nothing but the 46 basic hiragana (111 words).
-- **Dakuten** — words containing at least one ゛ or ゜ character (47 words).
-- **All** — everything (158 words).
+| Set | Words | Rule |
+| --- | --- | --- |
+| Hiragana | 111 | Spelled with nothing but the 46 basic hiragana |
+| Dakuten | 47 | Contains at least one ゛ or ゜ character |
+| Katakana | 52 | Spelled with nothing but the 46 katakana |
+| Combination | up to 210 | Anything spelled inside the ticked sets |
 
 The **romaji** chip in the corner decides whether the reading is shown up front
 or only after you answer. Off is the real practice; on is useful when you are
 still slow and want the reading there as a check.
 
-Every word is spelled using only the 46 hiragana and the 25 dakuten characters,
-so you never meet a character the app has not taught you. That rules out words
-needing the small っ or ゃ ゅ ょ — no がっこう, no でんしゃ — until those get a set
-of their own. Whether a word counts as plain or dakuten is worked out in code
-from its characters, so the filters cannot drift out of step with the list.
+A word is only ever offered when every one of its characters is taught by the
+set you are in, so you never meet a character the app has not shown you. That
+rules out anything needing the small っ or ゃ ゅ ょ — no がっこう, no でんしゃ. For
+katakana it also rules out the long mark ー and the katakana dakuten (ガ ザ ダ バ
+パ), which unfortunately excludes コーヒー, テレビ and パン. Those come back when
+those characters get sets of their own.
+
+None of this is tagged by hand — a word's set is worked out from its characters,
+so the lists cannot drift out of step.
 
 Picking one opens the **main menu** with the two practice modes. Drill for as
 long as you like, tap **‹** to come back, and **‹** again to switch sets. Below

@@ -5,8 +5,9 @@
 // That rules out anything needing the small っ or ゃ ゅ ょ - so no がっこう and no
 // でんしゃ - until those are added as their own set.
 //
-// Whether a word counts as "plain" or "needs dakuten" is worked out in code from
-// its characters, not tagged by hand, so it cannot drift out of step.
+// Which set a word belongs to is worked out in code from its characters, not
+// tagged by hand, so it cannot drift out of step. A word is offered in a set only
+// when every one of its characters is taught by that set.
 
 var WORDS = [
   // --- animals and nature ---
@@ -181,5 +182,62 @@ var WORDS = [
   { kana: 'すわる',   romaji: 'suwaru',    meaning: 'to sit' },
   { kana: 'つづく',   romaji: 'tsuzuku',   meaning: 'to continue' },
   { kana: 'あそぶ',   romaji: 'asobu',     meaning: 'to play' },
-  { kana: 'わかる',   romaji: 'wakaru',    meaning: 'to understand' }
+  { kana: 'わかる',   romaji: 'wakaru',    meaning: 'to understand' },
+
+  // --- katakana ---
+  // Loanwords spelled with plain katakana only. The long mark ー and the katakana
+  // dakuten (ガ ザ ダ バ パ) are not taught yet, which rules out コーヒー, テレビ
+  // and パン - the most famous loanwords are unfortunately all spelled with them.
+  { kana: 'テニス',     romaji: 'tenisu',     meaning: 'tennis' },
+  { kana: 'トマト',     romaji: 'tomato',     meaning: 'tomato' },
+  { kana: 'メロン',     romaji: 'meron',      meaning: 'melon' },
+  { kana: 'レモン',     romaji: 'remon',      meaning: 'lemon' },
+  { kana: 'ホテル',     romaji: 'hoteru',     meaning: 'hotel' },
+  { kana: 'ワイン',     romaji: 'wain',       meaning: 'wine' },
+  { kana: 'ミルク',     romaji: 'miruku',     meaning: 'milk' },
+  { kana: 'カメラ',     romaji: 'kamera',     meaning: 'camera' },
+  { kana: 'レストラン', romaji: 'resutoran',  meaning: 'restaurant' },
+  { kana: 'トイレ',     romaji: 'toire',      meaning: 'toilet' },
+  { kana: 'クラス',     romaji: 'kurasu',     meaning: 'class' },
+  { kana: 'テスト',     romaji: 'tesuto',     meaning: 'test' },
+  { kana: 'テキスト',   romaji: 'tekisuto',   meaning: 'textbook' },
+  { kana: 'アニメ',     romaji: 'anime',      meaning: 'anime' },
+  { kana: 'カラオケ',   romaji: 'karaoke',    meaning: 'karaoke' },
+  { kana: 'マラソン',   romaji: 'marason',    meaning: 'marathon' },
+  { kana: 'リモコン',   romaji: 'rimokon',    meaning: 'remote control' },
+  { kana: 'アイロン',   romaji: 'airon',      meaning: 'an iron (for clothes)' },
+  { kana: 'エアコン',   romaji: 'eakon',      meaning: 'air conditioner' },
+  { kana: 'ナイフ',     romaji: 'naifu',      meaning: 'knife' },
+  { kana: 'タオル',     romaji: 'taoru',      meaning: 'towel' },
+  { kana: 'マスク',     romaji: 'masuku',     meaning: 'mask' },
+  { kana: 'マイク',     romaji: 'maiku',      meaning: 'microphone' },
+  { kana: 'マウス',     romaji: 'mausu',      meaning: 'mouse (computer)' },
+  { kana: 'ソフト',     romaji: 'sofuto',     meaning: 'software' },
+  { kana: 'リスト',     romaji: 'risuto',     meaning: 'list' },
+  { kana: 'チキン',     romaji: 'chikin',     meaning: 'chicken' },
+  { kana: 'ハム',       romaji: 'hamu',       meaning: 'ham' },
+  { kana: 'ライス',     romaji: 'raisu',      meaning: 'rice (on a plate)' },
+  { kana: 'アイス',     romaji: 'aisu',       meaning: 'ice cream' },
+  { kana: 'ミント',     romaji: 'minto',      meaning: 'mint' },
+  { kana: 'クリスマス', romaji: 'kurisumasu', meaning: 'Christmas' },
+  { kana: 'ネクタイ',   romaji: 'nekutai',    meaning: 'necktie' },
+  { kana: 'ハンカチ',   romaji: 'hankachi',   meaning: 'handkerchief' },
+  { kana: 'ハンサム',   romaji: 'hansamu',    meaning: 'handsome' },
+  { kana: 'テント',     romaji: 'tento',      meaning: 'tent' },
+  { kana: 'ヒント',     romaji: 'hinto',      meaning: 'hint' },
+  { kana: 'サイン',     romaji: 'sain',       meaning: 'a signature, a sign' },
+  { kana: 'ライン',     romaji: 'rain',       meaning: 'line' },
+  { kana: 'コイン',     romaji: 'koin',       meaning: 'coin' },
+  { kana: 'ミス',       romaji: 'misu',       meaning: 'a mistake' },
+  { kana: 'メモ',       romaji: 'memo',       meaning: 'a memo, a note' },
+  { kana: 'キロ',       romaji: 'kiro',       meaning: 'kilo' },
+  { kana: 'センチ',     romaji: 'senchi',     meaning: 'centimetre' },
+  { kana: 'アメリカ',   romaji: 'amerika',    meaning: 'America' },
+  { kana: 'イタリア',   romaji: 'itaria',     meaning: 'Italy' },
+  { kana: 'フランス',   romaji: 'furansu',    meaning: 'France' },
+  { kana: 'ロシア',     romaji: 'roshia',     meaning: 'Russia' },
+  { kana: 'スイス',     romaji: 'suisu',      meaning: 'Switzerland' },
+  { kana: 'アフリカ',   romaji: 'afurika',    meaning: 'Africa' },
+  { kana: 'メキシコ',   romaji: 'mekishiko',  meaning: 'Mexico' },
+  { kana: 'ハワイ',     romaji: 'hawai',      meaning: 'Hawaii' }
 ];

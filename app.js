@@ -10,7 +10,7 @@
 
   var state = {
     screen: 'home',            // home | menu | read | write | picker | words
-    wordFilter: 'plain',       // plain | dakuten | all
+    combo: ['hiragana', 'dakuten', 'katakana'],   // ticked in the combination set
     wordRomaji: false,         // show the reading before you have answered?
     difficulty: 'easy',        // easy = wrong answers stay inside your selection
     off: {},                   // kana -> true means "switched off"
@@ -32,7 +32,7 @@
       state.stats = saved.stats || {};
       if (saved.difficulty) state.difficulty = saved.difficulty;
       if (saved.set) current = setById(saved.set);
-      if (saved.wordFilter) state.wordFilter = saved.wordFilter;
+      if (saved.combo && saved.combo.length) state.combo = saved.combo;
       if (typeof saved.wordRomaji === 'boolean') state.wordRomaji = saved.wordRomaji;
       return;
     }
@@ -54,7 +54,7 @@
     try {
       localStorage.setItem(STORE, JSON.stringify({
         off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id,
-        wordFilter: state.wordFilter, wordRomaji: state.wordRomaji
+        combo: state.combo, wordRomaji: state.wordRomaji
       }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
@@ -65,6 +65,11 @@
   }
 
   // ---------- choosing a character ----------
+  // Which characters carry a mark, worked out from the dakuten set rather than
+  // tagged by hand in words.js.
+  var dakutenChars = {};
+  setById('dakuten').kana.forEach(function (k) { dakutenChars[k.kana] = true; });
+
   function pool() {
     return current.kana.filter(function (k) { return !state.off[k.kana]; });
   }
@@ -196,8 +201,34 @@
   // character appears in two sets.
   function chooseSet(id) {
     current = setById(id);
+    if (current.isCombo) rebuildCombo();
     save();
     toMenu();
+  }
+
+  // Glue the ticked sets into one chart. Rows simply follow one another, so the
+  // picker shows hiragana's eleven rows, then dakuten's five, then katakana's.
+  function rebuildCombo() {
+    var combo = setById('combo');
+    combo.chart = [];
+    combo.kana = [];
+    SETS.forEach(function (set) {
+      if (set.isCombo || state.combo.indexOf(set.id) === -1) return;
+      combo.chart = combo.chart.concat(set.chart);
+      combo.kana = combo.kana.concat(set.kana);
+    });
+  }
+
+  function toggleCombo(id) {
+    var at = state.combo.indexOf(id);
+    if (at === -1) {
+      state.combo.push(id);
+    } else if (state.combo.length > 1) {      // never leave it empty
+      state.combo.splice(at, 1);
+    }
+    rebuildCombo();
+    save();
+    refreshMenu();
   }
 
   function startPractice(mode) {
@@ -219,6 +250,19 @@
     var on = pool().length;
     $('setName').textContent = current.name;
     $('setSample').textContent = current.sample;
+
+    $('comboPick').classList.toggle('hidden', !current.isCombo);
+    if (current.isCombo) {
+      all('[data-combo]').forEach(function (b) {
+        b.classList.toggle('on', state.combo.indexOf(b.dataset.combo) !== -1);
+      });
+    }
+
+    var words = wordPool().length;
+    $('goWords').disabled = words === 0;
+    $('wordsCount').textContent = words
+      ? words + ' words using only these characters'
+      : 'no words available for this set';
     $('pickerCount').textContent = on + ' of ' + current.kana.length + ' characters  ·  ' +
       (state.difficulty === 'hard' ? 'Harder' : 'Easy');
     $('goRead').disabled = on === 0;
@@ -251,8 +295,10 @@
     btn.addEventListener('click', function () { chooseSet(btn.dataset.set); });
   });
 
-  all('[data-words]').forEach(function (btn) {
-    btn.addEventListener('click', startWords);
+  $('goWords').addEventListener('click', startWords);
+
+  all('[data-combo]').forEach(function (btn) {
+    btn.addEventListener('click', function () { toggleCombo(btn.dataset.combo); });
   });
 
   $('goRead').addEventListener('click', function () { startPractice('read'); });
@@ -578,24 +624,28 @@
   // ---------- words ----------
   // A word "needs dakuten" if any of its characters carries a ゛ or ゜ mark. That
   // is worked out from the dakuten set rather than tagged by hand in words.js.
-  var dakutenChars = {};
-  setById('dakuten').kana.forEach(function (k) { dakutenChars[k.kana] = true; });
-
-  WORDS.forEach(function (w) {
-    w.dakuten = false;
-    for (var i = 0; i < w.kana.length; i++) {
-      if (dakutenChars[w.kana.charAt(i)]) { w.dakuten = true; break; }
-    }
-  });
-
+  // A word belongs to a set when every one of its characters is taught by that
+  // set. Dakuten is the exception: its words are written with ordinary hiragana
+  // too, so what counts is that at least one character carries a mark.
   function wordPool() {
-    if (state.wordFilter === 'plain') {
-      return WORDS.filter(function (w) { return !w.dakuten; });
+    var allowed = {};
+    current.kana.forEach(function (k) { allowed[k.kana] = true; });
+
+    var required = null;
+    if (current.id === 'dakuten') {
+      required = dakutenChars;
+      setById('hiragana').kana.forEach(function (k) { allowed[k.kana] = true; });
     }
-    if (state.wordFilter === 'dakuten') {
-      return WORDS.filter(function (w) { return w.dakuten; });
-    }
-    return WORDS;
+
+    return WORDS.filter(function (w) {
+      var hasRequired = !required;
+      for (var i = 0; i < w.kana.length; i++) {
+        var c = w.kana.charAt(i);
+        if (!allowed[c]) return false;
+        if (required && required[c]) hasRequired = true;
+      }
+      return hasRequired;
+    });
   }
 
   // Same weighting as the character drills: misses come back sooner.
@@ -621,11 +671,12 @@
   }
 
   function startWords() {
+    if (!wordPool().length) return;
     state.right = 0;
     state.total = 0;
     state.lastKana = null;
     updateScore();
-    setWordFilter(state.wordFilter);
+    $('wordsTitle').textContent = current.name + ' words';
     show('words');
     nextWord();
   }
@@ -663,14 +714,6 @@
     nextWord();
   }
 
-  function setWordFilter(which) {
-    state.wordFilter = which;
-    $('wPlain').classList.toggle('on', which === 'plain');
-    $('wDak').classList.toggle('on', which === 'dakuten');
-    $('wAll').classList.toggle('on', which === 'all');
-    save();
-  }
-
   function setWordRomaji(on) {
     state.wordRomaji = on;
     $('wRomaji').classList.toggle('on-chip', on);
@@ -681,15 +724,6 @@
   $('wReveal').addEventListener('click', revealWord);
   $('wGot').addEventListener('click', function () { gradeWord(true); });
   $('wMissed').addEventListener('click', function () { gradeWord(false); });
-
-  ['wPlain', 'wDak', 'wAll'].forEach(function (id, i) {
-    var which = ['plain', 'dakuten', 'all'][i];
-    $(id).addEventListener('click', function () {
-      setWordFilter(which);
-      state.lastKana = null;
-      nextWord();
-    });
-  });
 
   $('wRomaji').addEventListener('click', function () {
     setWordRomaji(!state.wordRomaji);
@@ -711,7 +745,7 @@
       return;
     }
     if (state.screen === 'words') {
-      if (e.key === 'Escape') { toHome(); return; }
+      if (e.key === 'Escape') { toMenu(); return; }
       var shown = !$('wordGrade').classList.contains('hidden');
       if (!shown && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); revealWord(); }
       else if (shown && (e.key === 'y' || e.key === 'ArrowRight' || e.key === 'Enter')) { e.preventDefault(); gradeWord(true); }
@@ -754,6 +788,7 @@
   });
 
   load();
+  rebuildCombo();
   setDifficulty(state.difficulty);
   setWordRomaji(state.wordRomaji);
   updateScore();
