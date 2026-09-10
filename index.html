@@ -12,61 +12,93 @@
 </head>
 <body>
 
-<header class="top">
-  <div class="tabs" role="tablist">
-    <button id="tabRead" class="tab is-on" role="tab">Read か → ka</button>
-    <button id="tabWrite" class="tab" role="tab">Write ka → か</button>
+<!-- ===== MAIN MENU ===== -->
+<section id="menuScreen" class="screen">
+  <div class="menu-head">
+    <h1 class="app-title">ひらがな</h1>
+    <p class="app-sub">hiragana practice</p>
   </div>
-  <div class="topbar">
-    <div class="score"><span id="scoreRight">0</span> / <span id="scoreTotal">0</span></div>
-    <button id="btnSettings" class="icon" aria-label="Settings">☰</button>
+
+  <div class="menu-choices">
+    <button id="goRead" class="menu-btn">
+      <span class="menu-btn-kana">か → ka</span>
+      <span class="menu-btn-main">Identify</span>
+      <span class="menu-btn-sub">See the character, choose the sound</span>
+    </button>
+    <button id="goWrite" class="menu-btn">
+      <span class="menu-btn-kana">ka → か</span>
+      <span class="menu-btn-main">Write</span>
+      <span class="menu-btn-sub">See the sound, draw the character</span>
+    </button>
   </div>
-</header>
 
-<main>
-  <!-- READ MODE -->
-  <section id="readPane" class="pane">
-    <div class="kana-box">
-      <div id="readKana" class="kana">あ</div>
-    </div>
-    <div id="choices" class="choices"></div>
-    <div id="readFeedback" class="feedback"></div>
-  </section>
-
-  <!-- WRITE MODE -->
-  <section id="writePane" class="pane hidden">
-    <div class="prompt-row">
-      <div class="prompt-label">write the character for</div>
-      <div id="writeRomaji" class="prompt">ka</div>
-    </div>
-    <div class="pad-wrap">
-      <div id="ghost" class="ghost">か</div>
-      <canvas id="pad"></canvas>
-      <button id="btnClear" class="clear" aria-label="Clear">clear</button>
-    </div>
-    <div id="writeActions" class="actions">
-      <button id="btnReveal" class="btn btn-primary">Show answer<span class="hint">space</span></button>
-    </div>
-    <div id="gradeActions" class="actions hidden">
-      <button id="btnMissed" class="btn btn-bad">Missed it<span class="hint">n</span></button>
-      <button id="btnGot" class="btn btn-good">Got it<span class="hint">y</span></button>
-    </div>
-  </section>
-</main>
-
-<!-- SETTINGS -->
-<div id="sheet" class="sheet hidden">
-  <div class="sheet-card">
-    <h2>Practice these rows</h2>
-    <div id="rowList" class="rows"></div>
-    <div class="sheet-buttons">
-      <button id="btnAllRows" class="btn btn-ghost">Select all</button>
-      <button id="btnReset" class="btn btn-ghost">Reset progress</button>
-    </div>
-    <div id="weakList" class="weak"></div>
-    <button id="btnClose" class="btn btn-primary wide">Done</button>
+  <div class="menu-foot">
+    <button id="goPicker" class="link-btn">
+      <span id="pickerCount">46 of 46 characters</span>
+      <span class="chev">›</span>
+    </button>
+    <div id="menuWeak" class="weak"></div>
   </div>
-</div>
+</section>
+
+<!-- ===== IDENTIFY ===== -->
+<section id="readScreen" class="screen hidden">
+  <header class="bar">
+    <button class="back" data-back aria-label="Back to menu">‹</button>
+    <span class="bar-title">Identify</span>
+    <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
+  </header>
+  <div class="kana-box">
+    <div id="readKana" class="kana">あ</div>
+  </div>
+  <div id="choices" class="choices"></div>
+  <div id="readFeedback" class="feedback"></div>
+</section>
+
+<!-- ===== WRITE ===== -->
+<section id="writeScreen" class="screen hidden">
+  <header class="bar">
+    <button class="back" data-back aria-label="Back to menu">‹</button>
+    <span class="bar-title">Write</span>
+    <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
+  </header>
+  <div class="prompt-row">
+    <div class="prompt-label">write the character for</div>
+    <div id="writeRomaji" class="prompt">ka</div>
+  </div>
+  <div class="pad-wrap">
+    <div id="ghost" class="ghost">か</div>
+    <canvas id="pad"></canvas>
+    <button id="btnClear" class="clear" aria-label="Clear">clear</button>
+  </div>
+  <div id="writeActions" class="actions">
+    <button id="btnReveal" class="btn btn-primary">Show answer<span class="hint">space</span></button>
+  </div>
+  <div id="gradeActions" class="actions hidden">
+    <button id="btnMissed" class="btn btn-bad">Missed it<span class="hint">n</span></button>
+    <button id="btnGot" class="btn btn-good">Got it<span class="hint">y</span></button>
+  </div>
+</section>
+
+<!-- ===== CHARACTER PICKER ===== -->
+<section id="pickerScreen" class="screen hidden">
+  <header class="bar">
+    <button class="back" data-back aria-label="Back to menu">‹</button>
+    <span class="bar-title">Characters</span>
+    <span class="bar-actions">
+      <button id="pickAll" class="mini">All</button>
+      <button id="pickNone" class="mini">None</button>
+    </span>
+  </header>
+  <p class="picker-hint">Tap a character to switch it on or off. Tap the row letter to do the whole row.</p>
+  <div class="chart-scroll">
+    <div id="chart" class="chart"></div>
+  </div>
+  <div class="picker-foot">
+    <span id="pickerFoot">46 on</span>
+    <button id="pickReset" class="mini">Reset progress</button>
+  </div>
+</section>
 
 <script src="data.js"></script>
 <script src="app.js"></script>

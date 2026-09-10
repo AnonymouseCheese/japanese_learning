@@ -1,12 +1,13 @@
 (function () {
   'use strict';
 
-  var STORE = 'hiragana-practice-v1';
+  var STORE = 'hiragana-practice-v2';
+  var OLD_STORE = 'hiragana-practice-v1';
 
   var state = {
-    mode: 'read',
-    rows: {},              // row id -> true/false
-    stats: {},             // kana -> { seen, wrong }
+    screen: 'menu',            // menu | read | write | picker
+    off: {},                   // kana -> true means "switched off"
+    stats: {},                 // kana -> { seen, wrong }
     right: 0,
     total: 0,
     current: null,
@@ -18,24 +19,29 @@
   function load() {
     var saved = null;
     try { saved = JSON.parse(localStorage.getItem(STORE)); } catch (e) { saved = null; }
-    if (saved && saved.rows) {
-      state.rows = saved.rows;
+
+    if (saved) {
+      state.off = saved.off || {};
       state.stats = saved.stats || {};
-      state.mode = saved.mode || 'read';
-    } else {
-      ROWS.forEach(function (r) { state.rows[r.id] = true; });
+      return;
     }
-    // guard against a save made with an older row list
-    ROWS.forEach(function (r) {
-      if (typeof state.rows[r.id] !== 'boolean') state.rows[r.id] = true;
-    });
+
+    // Nothing in the new format. Carry over a save from the row-based version.
+    var old = null;
+    try { old = JSON.parse(localStorage.getItem(OLD_STORE)); } catch (e) { old = null; }
+    if (!old) return;
+
+    state.stats = old.stats || {};
+    if (old.rows) {
+      KANA.forEach(function (k) {
+        if (old.rows[k.row] === false) state.off[k.kana] = true;
+      });
+    }
   }
 
   function save() {
     try {
-      localStorage.setItem(STORE, JSON.stringify({
-        rows: state.rows, stats: state.stats, mode: state.mode
-      }));
+      localStorage.setItem(STORE, JSON.stringify({ off: state.off, stats: state.stats }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
 
@@ -44,15 +50,15 @@
     return state.stats[kana];
   }
 
-  // ---------- picking a character ----------
+  // ---------- choosing a character ----------
   function pool() {
-    var list = KANA.filter(function (k) { return state.rows[k.row]; });
-    return list.length ? list : KANA.slice();
+    return KANA.filter(function (k) { return !state.off[k.kana]; });
   }
 
   // Characters you get wrong, and ones you have not seen yet, come up more often.
   function pick() {
     var list = pool();
+    if (!list.length) return null;
     if (list.length > 1 && state.lastKana) {
       list = list.filter(function (k) { return k.kana !== state.lastKana; });
     }
@@ -86,7 +92,10 @@
     return null;
   }
 
-  // Wrong answers: prefer look-alikes and same-row neighbours over random noise.
+  // Wrong answers come from look-alikes and same-row neighbours where possible,
+  // so the choice is a real test rather than an obvious one. They are drawn from
+  // the whole alphabet, not just the switched-on characters - otherwise turning
+  // on only one row would leave nothing to choose between.
   function distractors(target, n) {
     var near = [];
     LOOKALIKES.forEach(function (group) {
@@ -111,22 +120,88 @@
 
   // ---------- elements ----------
   function $(id) { return document.getElementById(id); }
+  function all(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
-  var readPane = $('readPane'), writePane = $('writePane');
+  var screens = {
+    menu: $('menuScreen'),
+    read: $('readScreen'),
+    write: $('writeScreen'),
+    picker: $('pickerScreen')
+  };
+
   var readKana = $('readKana'), choices = $('choices'), readFeedback = $('readFeedback');
   var writeRomaji = $('writeRomaji'), ghost = $('ghost');
   var writeActions = $('writeActions'), gradeActions = $('gradeActions');
-  var sheet = $('sheet'), rowList = $('rowList'), weakList = $('weakList');
 
   function updateScore() {
-    $('scoreRight').textContent = state.right;
-    $('scoreTotal').textContent = state.total;
+    all('.js-right').forEach(function (el) { el.textContent = state.right; });
+    all('.js-total').forEach(function (el) { el.textContent = state.total; });
   }
 
-  // ---------- read mode ----------
+  // ---------- screens ----------
+  function show(name) {
+    state.screen = name;
+    Object.keys(screens).forEach(function (key) {
+      screens[key].classList.toggle('hidden', key !== name);
+    });
+  }
+
+  function toMenu() {
+    show('menu');
+    refreshMenu();
+  }
+
+  function startPractice(mode) {
+    if (!pool().length) return;
+    state.right = 0;
+    state.total = 0;
+    state.lastKana = null;
+    updateScore();
+    show(mode);
+    if (mode === 'read') {
+      nextRead();
+    } else {
+      nextWrite();
+      requestAnimationFrame(sizePad);
+    }
+  }
+
+  function refreshMenu() {
+    var on = pool().length;
+    $('pickerCount').textContent = on + ' of ' + KANA.length + ' characters';
+    $('goRead').disabled = on === 0;
+    $('goWrite').disabled = on === 0;
+
+    var weak = Object.keys(state.stats)
+      .filter(function (k) { return state.stats[k].wrong > 0; })
+      .sort(function (a, b) { return state.stats[b].wrong - state.stats[a].wrong; })
+      .slice(0, 10);
+
+    var box = $('menuWeak');
+    box.innerHTML = '';
+    if (on === 0) {
+      box.textContent = 'No characters switched on yet.';
+    } else if (weak.length) {
+      box.appendChild(document.createTextNode('Needs work: '));
+      var b = document.createElement('b');
+      b.textContent = weak.join('  ');
+      box.appendChild(b);
+    }
+  }
+
+  all('[data-back]').forEach(function (btn) {
+    btn.addEventListener('click', toMenu);
+  });
+
+  $('goRead').addEventListener('click', function () { startPractice('read'); });
+  $('goWrite').addEventListener('click', function () { startPractice('write'); });
+  $('goPicker').addEventListener('click', function () { drawChart(); show('picker'); });
+
+  // ---------- identify ----------
   function nextRead() {
     state.locked = false;
     state.current = pick();
+    if (!state.current) { toMenu(); return; }
     state.lastKana = state.current.kana;
     readKana.textContent = state.current.kana;
     readFeedback.textContent = '';
@@ -172,10 +247,12 @@
 
     updateScore();
     save();
-    setTimeout(nextRead, correct ? 450 : 1500);
+    setTimeout(function () {
+      if (state.screen === 'read') nextRead();
+    }, correct ? 450 : 1500);
   }
 
-  // ---------- write mode ----------
+  // ---------- write ----------
   var pad = $('pad'), ctx = pad.getContext('2d');
   var drawing = false, dpr = 1;
 
@@ -246,6 +323,7 @@
 
   function nextWrite() {
     state.current = pick();
+    if (!state.current) { toMenu(); return; }
     state.lastKana = state.current.kana;
     writeRomaji.textContent = state.current.romaji;
     ghost.textContent = state.current.kana;
@@ -281,102 +359,114 @@
   $('btnGot').addEventListener('click', function () { gradeWrite(true); });
   $('btnMissed').addEventListener('click', function () { gradeWrite(false); });
 
-  // ---------- modes ----------
-  function setMode(mode) {
-    state.mode = mode;
-    $('tabRead').classList.toggle('is-on', mode === 'read');
-    $('tabWrite').classList.toggle('is-on', mode === 'write');
-    readPane.classList.toggle('hidden', mode !== 'read');
-    writePane.classList.toggle('hidden', mode !== 'write');
-    save();
-    if (mode === 'read') {
-      nextRead();
-    } else {
-      nextWrite();
-      requestAnimationFrame(sizePad);
-    }
+  // ---------- character picker ----------
+  var chart = $('chart');
+
+  function isRowOn(row) {
+    return row.cells.some(function (c) { return c && !state.off[c[0]]; });
   }
 
-  $('tabRead').addEventListener('click', function () { setMode('read'); });
-  $('tabWrite').addEventListener('click', function () { setMode('write'); });
+  function drawChart() {
+    chart.innerHTML = '';
 
-  // ---------- settings ----------
-  function drawRows() {
-    rowList.innerHTML = '';
-    ROWS.forEach(function (r) {
-      var b = document.createElement('button');
-      b.className = 'row-toggle' + (state.rows[r.id] ? ' on' : '');
-      var dot = document.createElement('span');
-      dot.className = 'dot';
-      var label = document.createElement('span');
-      label.textContent = r.label;
-      b.appendChild(dot);
-      b.appendChild(label);
-      b.addEventListener('click', function () {
-        state.rows[r.id] = !state.rows[r.id];
-        var any = ROWS.some(function (x) { return state.rows[x.id]; });
-        if (!any) state.rows[r.id] = true;        // never leave the pool empty
-        b.classList.toggle('on', state.rows[r.id]);
-        save();
-      });
-      rowList.appendChild(b);
+    // header: an empty corner, then the vowel column labels
+    chart.appendChild(document.createElement('div'));
+    VOWELS.forEach(function (v) {
+      var h = document.createElement('div');
+      h.className = 'col-head';
+      h.textContent = v;
+      chart.appendChild(h);
     });
+
+    CHART.forEach(function (row) {
+      var head = document.createElement('button');
+      head.className = 'row-head';
+      head.textContent = row.label;
+      head.addEventListener('click', function () { toggleRow(row); });
+      chart.appendChild(head);
+
+      row.cells.forEach(function (cell) {
+        if (!cell) {
+          var blank = document.createElement('div');
+          blank.className = 'cell-blank';
+          chart.appendChild(blank);
+          return;
+        }
+        var kana = cell[0], romaji = cell[1];
+        var b = document.createElement('button');
+        b.className = 'cell ' + (state.off[kana] ? 'off' : 'on');
+        b.dataset.kana = kana;
+
+        var k = document.createElement('span');
+        k.className = 'c-kana';
+        k.textContent = kana;
+        var r = document.createElement('span');
+        r.className = 'c-romaji';
+        r.textContent = romaji;
+        b.appendChild(k);
+        b.appendChild(r);
+
+        b.addEventListener('click', function () {
+          if (state.off[kana]) { delete state.off[kana]; } else { state.off[kana] = true; }
+          b.className = 'cell ' + (state.off[kana] ? 'off' : 'on');
+          save();
+          updatePickerFoot();
+        });
+
+        chart.appendChild(b);
+      });
+    });
+
+    updatePickerFoot();
   }
 
-  function drawWeak() {
-    var weak = Object.keys(state.stats)
-      .filter(function (k) { return state.stats[k].wrong > 0; })
-      .sort(function (a, b) { return state.stats[b].wrong - state.stats[a].wrong; })
-      .slice(0, 10);
-
-    weakList.innerHTML = '';
-    if (!weak.length) {
-      weakList.textContent = 'No trouble characters yet.';
-      return;
-    }
-    weakList.appendChild(document.createTextNode('Needs work: '));
-    var b = document.createElement('b');
-    b.textContent = weak.join('  ');
-    weakList.appendChild(b);
-  }
-
-  $('btnSettings').addEventListener('click', function () {
-    drawRows();
-    drawWeak();
-    sheet.classList.remove('hidden');
-  });
-
-  $('btnClose').addEventListener('click', function () {
-    sheet.classList.add('hidden');
-    setMode(state.mode);          // reload the question using the new row selection
-  });
-
-  sheet.addEventListener('click', function (e) {
-    if (e.target === sheet) $('btnClose').click();
-  });
-
-  $('btnAllRows').addEventListener('click', function () {
-    ROWS.forEach(function (r) { state.rows[r.id] = true; });
-    drawRows();
+  // Tapping the row label switches the whole row off, or back on if any of it
+  // is already off.
+  function toggleRow(row) {
+    var turnOff = isRowOn(row);
+    row.cells.forEach(function (c) {
+      if (!c) return;
+      if (turnOff) { state.off[c[0]] = true; } else { delete state.off[c[0]]; }
+    });
     save();
+    drawChart();
+  }
+
+  function updatePickerFoot() {
+    $('pickerFoot').textContent = pool().length + ' of ' + KANA.length + ' on';
+  }
+
+  $('pickAll').addEventListener('click', function () {
+    state.off = {};
+    save();
+    drawChart();
   });
 
-  $('btnReset').addEventListener('click', function () {
+  $('pickNone').addEventListener('click', function () {
+    KANA.forEach(function (k) { state.off[k.kana] = true; });
+    save();
+    drawChart();
+  });
+
+  $('pickReset').addEventListener('click', function () {
     state.stats = {};
     state.right = 0;
     state.total = 0;
     updateScore();
-    drawWeak();
     save();
+    $('pickReset').textContent = 'Progress cleared';
+    setTimeout(function () { $('pickReset').textContent = 'Reset progress'; }, 1500);
   });
 
   // ---------- keyboard (desktop) ----------
   document.addEventListener('keydown', function (e) {
-    if (!sheet.classList.contains('hidden')) {
-      if (e.key === 'Escape') $('btnClose').click();
+    if (state.screen === 'menu' || state.screen === 'picker') {
+      if (e.key === 'Escape' && state.screen === 'picker') toMenu();
       return;
     }
-    if (state.mode === 'read') {
+    if (e.key === 'Escape') { toMenu(); return; }
+
+    if (state.screen === 'read') {
       var n = parseInt(e.key, 10);
       if (n >= 1 && n <= choices.children.length) {
         e.preventDefault();
@@ -384,7 +474,8 @@
       }
       return;
     }
-    // write mode
+
+    // write screen
     var revealed = !gradeActions.classList.contains('hidden');
     if (e.key === 'c') { e.preventDefault(); clearPad(); return; }
     if (!revealed && (e.key === ' ' || e.key === 'Enter')) {
@@ -401,15 +492,14 @@
 
   // ---------- go ----------
   window.addEventListener('resize', function () {
-    if (state.mode === 'write') sizePad();
+    if (state.screen === 'write') sizePad();
   });
 
   window.addEventListener('orientationchange', function () {
-    setTimeout(function () { if (state.mode === 'write') sizePad(); }, 250);
+    setTimeout(function () { if (state.screen === 'write') sizePad(); }, 250);
   });
 
   load();
   updateScore();
-  setMode(state.mode);
-  sizePad();
+  toMenu();
 })();
