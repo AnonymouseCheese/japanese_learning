@@ -40,29 +40,13 @@ Drawing works with the mouse too — hold the button down and drag.
 Double-click `index.html`. That's it. Make the window narrow and tall to see
 roughly what the phone gets.
 
-## Putting it on GitHub Pages (free)
+## Where it lives
 
-1. Go to github.com and create a **new public repository**. Name it
-   `japanese_learning`. Do not tick "add a README" — this folder already has one.
-2. GitHub will show you a page of commands. From this folder, run the two lines
-   under *"…or push an existing repository from the command line"*. They look
-   like:
+Live at **https://anonymousecheese.github.io/japanese_learning/**
 
-   ```
-   git remote add origin https://github.com/YOUR-USERNAME/japanese_learning.git
-   git push -u origin main
-   ```
-
-3. In the repository, click **Settings** → **Pages** in the left sidebar.
-4. Under *Build and deployment*, set **Source** to `Deploy from a branch`, and
-   set the branch to `main` and the folder to `/ (root)`. Click **Save**.
-5. Wait about a minute, then reload that page. It will show your address:
-
-   ```
-   https://YOUR-USERNAME.github.io/japanese_learning/
-   ```
-
-Open that in Safari on your iPhone.
+Hosted free on GitHub Pages out of this repository. Pages is already switched on
+and set to serve the `main` branch from the root folder, so there is nothing to
+configure again.
 
 ## Making it look like a real app
 
