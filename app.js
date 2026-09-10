@@ -19,7 +19,6 @@
     right: 0,
     total: 0,
     current: null,
-    lastKana: null,
     locked: false
   };
 
@@ -75,19 +74,41 @@
     return current.kana.filter(function (k) { return !state.off[k.kana]; });
   }
 
-  // Characters you get wrong, and ones you have not seen yet, come up more often.
-  function pick() {
-    var list = pool();
+  // How likely something is to come up next. Two things push it to the front:
+  // having barely been tested yet, and being got wrong.
+  //
+  //   never seen      1 + 8 + 0  =  9
+  //   seen once       1 + 6 + 0  =  7
+  //   seen four times 1 + 0 + 0  =  1     <- settled
+  //   one miss        1 + 0 + 4  =  5
+  //   three misses    1 + 0 + 12 = 13
+  //
+  // The old version only looked at `seen` when it was zero, so a character
+  // drilled thirty times weighed the same as one drilled once.
+  function weightFor(key) {
+    var s = stat(key);
+    return 1 + Math.max(0, 4 - s.seen) * 2 + s.wrong * 4;
+  }
+
+  // The last few asked, so the same character does not come round immediately.
+  var recent = [];
+
+  function remember(key) {
+    recent.push(key);
+    while (recent.length > 3) recent.shift();
+  }
+
+  function forgetRecent() { recent = []; }
+
+  // Weighted pick from a list, skipping anything asked in the last few turns -
+  // but only while that still leaves a real choice.
+  function pickFrom(list, keyOf) {
     if (!list.length) return null;
-    if (list.length > 1 && state.lastKana) {
-      list = list.filter(function (k) { return k.kana !== state.lastKana; });
-    }
-    var weights = list.map(function (k) {
-      var s = stat(k.kana);
-      var w = 1 + s.wrong * 3;
-      if (s.seen === 0) w += 2;
-      return w;
-    });
+
+    var fresh = list.filter(function (item) { return recent.indexOf(keyOf(item)) === -1; });
+    if (fresh.length >= 2) list = fresh;
+
+    var weights = list.map(function (item) { return weightFor(keyOf(item)); });
     var total = weights.reduce(function (a, b) { return a + b; }, 0);
     var roll = Math.random() * total;
     for (var i = 0; i < list.length; i++) {
@@ -95,6 +116,12 @@
       if (roll <= 0) return list[i];
     }
     return list[list.length - 1];
+  }
+
+  function kanaKey(k) { return k.kana; }
+
+  function pick() {
+    return pickFrom(pool(), kanaKey);
   }
 
   function shuffle(arr) {
@@ -245,7 +272,7 @@
     if (!pool().length) return;
     state.right = 0;
     state.total = 0;
-    state.lastKana = null;
+    forgetRecent();
     updateScore();
     show(mode);
     if (mode === 'read') {
@@ -320,7 +347,7 @@
     state.locked = false;
     state.current = pick();
     if (!state.current) { toMenu(); return; }
-    state.lastKana = state.current.kana;
+    remember(state.current.kana);
     readKana.textContent = state.current.kana;
     readFeedback.textContent = '';
 
@@ -448,7 +475,7 @@
   function nextWrite() {
     state.current = pick();
     if (!state.current) { toMenu(); return; }
-    state.lastKana = state.current.kana;
+    remember(state.current.kana);
     writeRomaji.textContent = labelText(state.current);
     ghost.textContent = state.current.kana;
     ghost.classList.remove('show');
@@ -767,33 +794,16 @@
     });
   }
 
-  // Same weighting as the character drills: misses come back sooner.
+  // Words are weighted and de-repeated exactly like characters.
   function pickWord() {
-    var list = wordPool();
-    if (!list.length) return null;
-    if (list.length > 1 && state.lastKana) {
-      list = list.filter(function (w) { return w.kana !== state.lastKana; });
-    }
-    var weights = list.map(function (w) {
-      var st = stat(w.kana);
-      var n = 1 + st.wrong * 3;
-      if (st.seen === 0) n += 2;
-      return n;
-    });
-    var total = weights.reduce(function (a, b) { return a + b; }, 0);
-    var roll = Math.random() * total;
-    for (var i = 0; i < list.length; i++) {
-      roll -= weights[i];
-      if (roll <= 0) return list[i];
-    }
-    return list[list.length - 1];
+    return pickFrom(wordPool(), kanaKey);
   }
 
   function startWords() {
     if (!wordPool().length) return;
     state.right = 0;
     state.total = 0;
-    state.lastKana = null;
+    forgetRecent();
     updateScore();
     $('wordsTitle').textContent = current.name + ' words';
     show('words');
@@ -803,7 +813,7 @@
   function nextWord() {
     state.current = pickWord();
     if (!state.current) { toHome(); return; }
-    state.lastKana = state.current.kana;
+    remember(state.current.kana);
     $('wordKana').textContent = state.current.kana;
     $('wordRomaji').textContent = state.wordRomaji ? state.current.romaji : '';
     $('wordMeaning').textContent = '';
