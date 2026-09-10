@@ -13,7 +13,7 @@
     chartFrom: 'read',         // which drill the reference chart was opened from
     combo: ['hiragana', 'dakuten', 'katakana'],   // ticked in the combination set
     wordRomaji: false,         // show the reading before you have answered?
-    difficulty: 'easy',        // easy = wrong answers stay inside your selection
+    difficulty: 'easy',        // easy | medium | hard - where wrong answers come from
     off: {},                   // kana -> true means "switched off"
     stats: {},                 // kana -> { seen, wrong }
     right: 0,
@@ -118,11 +118,16 @@
     return null;
   }
 
-  // Wrong answers are drawn from `candidates` - on Easy that is only the
-  // characters you switched on, so narrowing to one row keeps the whole question
-  // inside that row. Within the candidates, look-alikes and same-row neighbours
-  // are preferred over random ones so the choice still tests something.
-  function distractors(target, n, candidates) {
+  // Wrong answers are drawn from `candidates`, in an order that depends on the
+  // difficulty:
+  //
+  //   easy   - the character's own row first, so a question about く is answered
+  //            against か き け こ. Predictable, and what you want on a new row.
+  //   medium - look-alikes first, then anything else, with no row preference, so
+  //            the wrong answers spread across every row you switched on.
+  //   hard   - the same ordering as medium, but `candidates` is the whole set
+  //            rather than just your selection.
+  function distractors(target, n, candidates, level) {
     var allowed = {};
     candidates.forEach(function (k) { allowed[k.kana] = true; });
 
@@ -135,7 +140,10 @@
     var sameRow = candidates.filter(function (k) { return k.row === target.row; })
                             .map(function (k) { return k.kana; });
     var rest = candidates.map(function (k) { return k.kana; });
-    var ordered = shuffle(near).concat(shuffle(sameRow)).concat(shuffle(rest));
+
+    var ordered = level === 'easy'
+      ? shuffle(sameRow).concat(shuffle(near)).concat(shuffle(rest))
+      : shuffle(near).concat(shuffle(rest));
 
     var out = [];
     var used = {};
@@ -156,7 +164,7 @@
     // selection is smaller than that, fall back to the whole set.
     if (candidates.length < 2) candidates = current.kana;
     var count = Math.min(4, candidates.length);
-    return shuffle(distractors(target, count - 1, candidates).concat([target]));
+    return shuffle(distractors(target, count - 1, candidates, state.difficulty).concat([target]));
   }
 
   // ---------- elements ----------
@@ -266,7 +274,7 @@
       ? words + ' words using only these characters'
       : 'no words available for this set';
     $('pickerCount').textContent = on + ' of ' + current.kana.length + ' characters  ·  ' +
-      (state.difficulty === 'hard' ? 'Harder' : 'Easy');
+      state.difficulty.charAt(0).toUpperCase() + state.difficulty.slice(1);
     $('goRead').disabled = on === 0;
     $('goWrite').disabled = on === 0;
 
@@ -689,17 +697,24 @@
     $('pickerFoot').textContent = pool().length + ' of ' + current.kana.length + ' on';
   }
 
+  var DIFFICULTY_NOTE = {
+    easy: 'Wrong answers come from the same row as the character shown, so a question about く is answered against か き け こ.',
+    medium: 'Wrong answers come from anywhere you have switched on, so three rows means all three rows are in play.',
+    hard: 'Wrong answers can be any character in this set, including rows you have switched off.'
+  };
+
   function setDifficulty(level) {
+    if (!DIFFICULTY_NOTE[level]) level = 'easy';
     state.difficulty = level;
     $('diffEasy').classList.toggle('on', level === 'easy');
+    $('diffMed').classList.toggle('on', level === 'medium');
     $('diffHard').classList.toggle('on', level === 'hard');
-    $('diffNote').textContent = level === 'easy'
-      ? 'Identify only offers sounds from the characters you switched on. Turn on one row and the whole question stays inside that row.'
-      : 'Identify can offer any of the 46 sounds as a wrong answer, even ones you have not switched on.';
+    $('diffNote').textContent = DIFFICULTY_NOTE[level];
     save();
   }
 
   $('diffEasy').addEventListener('click', function () { setDifficulty('easy'); });
+  $('diffMed').addEventListener('click', function () { setDifficulty('medium'); });
   $('diffHard').addEventListener('click', function () { setDifficulty('hard'); });
 
   $('pickAll').addEventListener('click', function () {

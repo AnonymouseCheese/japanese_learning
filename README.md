@@ -125,18 +125,24 @@ Tapping a line that is only half on fills it up rather than emptying it, which
 is usually what you want part-way through choosing. **All** and **None** are in
 the top corner.
 
-### Easy or Harder
+### Easy, Medium, Hard
 
-On the same screen is a switch for where the *wrong* answers come from:
+On the same screen is a switch for where the *wrong* answers come from. It
+applies to **Identify only** — Write has no wrong answers to choose between, so
+the setting does nothing there.
 
-- **Easy** (the default) — the wrong answers are only ever characters you have
-  switched on. Turn on the か row alone and every question stays inside か き く
-  け こ, which is what you want while you are still learning a row.
-- **Harder** — the wrong answers can be any of the 46, including characters you
-  have not switched on yet.
+| Level | Wrong answers come from |
+| --- | --- |
+| **Easy** (default) | The same row as the character shown. A question about く is answered against か き け こ. |
+| **Medium** | Anywhere you have switched on. Three rows on means all three rows are in play. |
+| **Hard** | Any character in the set, including rows you have switched off. |
 
-Either way, within whatever it is allowed to use, look-alike characters are
-preferred over random ones — so あ tends to be offered against お and む.
+Easy is the one to use while a row is still new — it keeps the question inside
+the five characters you are working on. Medium is the real test of a selection.
+Hard is for when the whole set is close to solid.
+
+On Medium and Hard, look-alike characters are preferred over random ones, so あ
+tends to be offered against お and む rather than something obvious.
 
 If your selection is smaller than four characters, Identify simply shows fewer
 buttons rather than padding the question out with characters you turned off.

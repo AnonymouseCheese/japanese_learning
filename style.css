@@ -515,3 +515,16 @@ body {
 }
 
 .chart-group:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+
+/* The difficulty switch only affects Identify - Write has no wrong answers to
+   choose from - so it says so above the control. */
+.seg-label {
+  margin: 0 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--dim);
+}
+
+/* Three levels rather than two, so the labels need a little less room. */
+.seg-btn { font-size: 13px; padding: 10px 4px; }
