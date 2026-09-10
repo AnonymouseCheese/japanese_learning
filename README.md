@@ -98,8 +98,21 @@ git commit -m "describe what changed"
 git push
 ```
 
-The live site updates itself within a minute. If your phone still shows the old
-version, pull the page down to refresh.
+The live site updates itself within a minute.
+
+**If the phone still shows the old version:** GitHub Pages tells browsers to
+cache `app.js` and `style.css` for ten minutes, so Safari will happily keep
+running the old code. To get around that, the links in `index.html` carry a
+version number:
+
+```html
+<link rel="stylesheet" href="style.css?v=3">
+<script src="app.js?v=3"></script>
+```
+
+Bump every `v=3` to `v=4` whenever you change the CSS or JavaScript. The number
+means nothing to the browser except "this is a different file", which forces a
+fresh download. Then pull down to refresh on the phone.
 
 ## The files
 
