@@ -86,8 +86,9 @@ Every other character just shows its romaji.
   wrong answers are picked from look-alike characters and the same row, so it
   stays hard rather than guessable.
 - **Write (ka → か)** — a sound appears, you draw the character with your finger,
-  then tap **Show answer**. The real character fades in behind your drawing so
-  you can compare shapes, and you mark yourself right or wrong.
+  then tap **Show answer**. The real character appears behind your drawing as a
+  hollow outline, so it stays clearly visible without hiding your own strokes,
+  and you mark yourself right or wrong.
 
 ## What it remembers
 

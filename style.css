@@ -237,7 +237,19 @@ body {
   pointer-events: none;
 }
 
-.ghost.show { opacity: .28; }
+/* The answer is drawn as a hollow outline rather than a faint fill, so it is
+   clearly visible while your own strokes still read on top of it. The plain
+   translucent fill stays as a fallback where text-stroke is unsupported. */
+.ghost.show { opacity: .35; }
+
+@supports (-webkit-text-stroke: 1px black) {
+  .ghost {
+    color: transparent;
+    -webkit-text-stroke: 3px var(--accent);
+  }
+
+  .ghost.show { opacity: 1; }
+}
 
 .clear {
   position: absolute;
