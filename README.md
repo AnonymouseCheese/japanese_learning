@@ -45,9 +45,32 @@ Which words you get depends on the set you are in:
 | Katakana | 64 | Spelled with nothing but the 46 katakana |
 | Combination | up to 324 | Anything spelled inside the ticked sets |
 
-The **romaji** chip in the corner decides whether the reading is shown up front
-or only after you answer. Off is the real practice; on is useful when you are
-still slow and want the reading there as a check.
+Two chips in the corner, both showing their state by lighting up:
+
+- **romaji** — whether the reading is shown up front or only after you answer.
+  Off is the real practice; on is useful when you are still slow.
+- **sound** — whether the word is read aloud when the answer appears. A
+  **♪ listen** button sits with the answer either way, to replay it.
+
+## Sound
+
+Audio uses the browser's own speech synthesis, so there are no files to host and
+nothing to license, and it works offline. iOS ships Japanese voices, so a phone
+reads kana properly. Where a browser has no speech support the controls simply
+do not appear.
+
+It is deliberately limited to two places:
+
+- **Words**, when the answer is revealed — never before, or it would be the
+  answer.
+- **The chart**, where tapping any character says it. Reachable from the menu as
+  well as mid-drill.
+
+Not in Identify, Write or List. In Identify the sound *is* the answer. In Write
+and List it would be tempting, but single isolated kana are where synthesised
+speech is least reliable — を alone is read as "wo" rather than "o", ん barely
+registers, and ぢ and づ come out identical to じ and ず. Whole words give the
+synthesiser enough context to get it right.
 
 A word is only ever offered when every one of its characters is taught by the
 set you are in, so you never meet a character the app has not shown you. That

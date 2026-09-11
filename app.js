@@ -13,6 +13,7 @@
     chartFrom: 'read',         // which drill the reference chart was opened from
     combo: ['hiragana', 'dakuten', 'katakana'],   // ticked in the combination set
     wordRomaji: false,         // show the reading before you have answered?
+    wordSound: true,           // say the word out loud when the answer shows?
     difficulty: 'easy',        // easy | medium | hard - where wrong answers come from
     writeOrder: 'random',      // random | list - how Write picks the next character
     exam: null,                // the exam in progress, or null
@@ -39,6 +40,7 @@
       if (saved.combo && saved.combo.length) state.combo = saved.combo;
       if (typeof saved.wordRomaji === 'boolean') state.wordRomaji = saved.wordRomaji;
       state.examSeen = saved.examSeen || {};
+      if (typeof saved.wordSound === 'boolean') state.wordSound = saved.wordSound;
       return;
     }
 
@@ -59,7 +61,8 @@
     try {
       localStorage.setItem(STORE, JSON.stringify({
         off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id,
-        combo: state.combo, wordRomaji: state.wordRomaji, examSeen: state.examSeen
+        combo: state.combo, wordRomaji: state.wordRomaji, examSeen: state.examSeen,
+        wordSound: state.wordSound
       }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
@@ -328,6 +331,10 @@
     $('goWrite').disabled = on === 0;
     $('goList').disabled = on === 0;
     $('goExam').disabled = on === 0;
+
+    $('chartLinkLabel').textContent = speech.ok
+      ? 'Chart · tap a character to hear it'
+      : 'Chart';
 
     var covered = pool().filter(function (k) { return state.examSeen[k.kana]; }).length;
     $('examCoverage').textContent = on
@@ -761,17 +768,25 @@
           grid.appendChild(blank);
           return;
         }
-        var box = document.createElement('div');
-        box.className = 'cell ' + (state.off[cell[0]] ? 'off' : 'on');
+          // A button rather than a plain cell: the reference chart is read-only,
+          // so a tap is free to mean "say this one".
+          var box = document.createElement('button');
+          box.className = 'cell ' + (state.off[cell[0]] ? 'off' : 'on');
+          box.dataset.kana = cell[0];
 
-        var k = document.createElement('span');
-        k.className = 'c-kana';
-        k.textContent = cell[0];
-        var r = document.createElement('span');
-        r.className = 'c-romaji';
-        r.textContent = cell[1];
+          var k = document.createElement('span');
+          k.className = 'c-kana';
+          k.textContent = cell[0];
+          var r = document.createElement('span');
+          r.className = 'c-romaji';
+          r.textContent = cell[1];
           box.appendChild(k);
           box.appendChild(r);
+
+          (function (kana) {
+            box.addEventListener('click', function () { say(kana); });
+          }(cell[0]));
+
           grid.appendChild(box);
         });
       });
@@ -781,6 +796,9 @@
   function openChart() {
     state.chartFrom = state.screen;
     $('refTitle').textContent = current.name + ' chart';
+    $('refHint').textContent = speech.ok
+      ? 'Tap a character to hear it. Switched-off characters are shown with a dashed outline.'
+      : 'Everything currently being tested. Switched-off characters are shown with a dashed outline.';
     drawReference();
     show('reference');
   }
@@ -788,6 +806,10 @@
   // Coming back starts a fresh question - the one that was on screen is dropped,
   // neither right nor wrong.
   function closeChart() {
+    if (state.chartFrom === 'menu') {
+      toMenu();
+      return;
+    }
     if (state.chartFrom === 'write') {
       show('write');
       nextWrite();
@@ -852,6 +874,54 @@
   });
 
 
+
+  // ---------- saying a word out loud ----------
+  // The browser's own speech synthesis. Nothing to host, nothing to license, and
+  // it works offline - iOS ships Japanese voices, so a phone reads kana properly.
+  // Where no speech support exists at all, the controls simply do not appear.
+  var speech = {
+    ok: false,
+    voice: null
+  };
+
+  try {
+    speech.ok = !!(window.speechSynthesis && typeof window.SpeechSynthesisUtterance === 'function');
+  } catch (e) {
+    speech.ok = false;
+  }
+
+  function chooseVoice() {
+    if (!speech.ok) return;
+    var voices = [];
+    try { voices = window.speechSynthesis.getVoices() || []; } catch (e) { voices = []; }
+    for (var i = 0; i < voices.length; i++) {
+      if (/^ja\b/i.test(voices[i].lang) || /^ja[-_]/i.test(voices[i].lang)) {
+        speech.voice = voices[i];
+        return;
+      }
+    }
+  }
+
+  if (speech.ok) {
+    chooseVoice();
+    // the voice list often arrives after the page does
+    try { window.speechSynthesis.onvoiceschanged = chooseVoice; } catch (e) {}
+  }
+
+  // Kana is already phonetic, so the word itself is what gets spoken. Slightly
+  // slower than normal - a learner needs to hear the individual sounds.
+  function say(text) {
+    if (!speech.ok || !text) return;
+    try {
+      window.speechSynthesis.cancel();
+      var u = new window.SpeechSynthesisUtterance(text);
+      u.lang = 'ja-JP';
+      if (speech.voice) u.voice = speech.voice;
+      u.rate = 0.85;
+      window.speechSynthesis.speak(u);
+    } catch (e) { /* not worth interrupting practice over */ }
+  }
+
   // ---------- words ----------
   // A word "needs dakuten" if any of its characters carries a ゛ or ゜ mark. That
   // is worked out from the dakuten set rather than tagged by hand in words.js.
@@ -910,6 +980,7 @@
     $('wordMeaning').textContent = '';
     $('wordActions').classList.remove('hidden');
     $('wordGrade').classList.add('hidden');
+    $('wListen').classList.add('hidden');
   }
 
   function revealWord() {
@@ -917,6 +988,8 @@
     $('wordMeaning').textContent = state.current.meaning;
     $('wordActions').classList.add('hidden');
     $('wordGrade').classList.remove('hidden');
+    $('wListen').classList.toggle('hidden', !speech.ok);
+    if (state.wordSound) say(state.current.kana);
   }
 
   function gradeWord(correct) {
@@ -935,16 +1008,33 @@
     nextWord();
   }
 
+  // Both chips show their state by lighting up rather than by changing their
+  // wording, which keeps the bar from crowding on a narrow phone.
   function setWordRomaji(on) {
     state.wordRomaji = on;
     $('wRomaji').classList.toggle('on-chip', on);
-    $('wRomaji').textContent = on ? 'romaji on' : 'romaji off';
+    save();
+  }
+
+  function setWordSound(on) {
+    state.wordSound = on;
+    $('wSound').classList.toggle('on-chip', on && speech.ok);
+    $('wSound').classList.toggle('hidden', !speech.ok);
     save();
   }
 
   $('wReveal').addEventListener('click', revealWord);
   $('wGot').addEventListener('click', function () { gradeWord(true); });
   $('wMissed').addEventListener('click', function () { gradeWord(false); });
+
+  $('wSound').addEventListener('click', function () {
+    setWordSound(!state.wordSound);
+    if (state.wordSound && state.current) say(state.current.kana);
+  });
+
+  $('wListen').addEventListener('click', function () {
+    if (state.current) say(state.current.kana);
+  });
 
   $('wRomaji').addEventListener('click', function () {
     setWordRomaji(!state.wordRomaji);
@@ -964,12 +1054,16 @@
   // Choosing what to test. Items the current round of exams has not covered yet
   // come first, so a few exams sweep the whole set rather than asking the same
   // characters every time. When everything has been covered the round restarts.
-  function examPick(list, n) {
+  // `prefix` keeps characters and words in separate namespaces. Some words are a
+  // single character - き is "tree", て is "hand" - so without it, reading the
+  // word き would count as having examined the character き.
+  function examPick(list, n, prefix) {
     if (!list.length) return [];
+    var key = function (it) { return prefix + it.kana; };
 
-    var unseen = list.filter(function (it) { return !state.examSeen[it.kana]; });
+    var unseen = list.filter(function (it) { return !state.examSeen[key(it)]; });
     if (!unseen.length) {
-      list.forEach(function (it) { delete state.examSeen[it.kana]; });
+      list.forEach(function (it) { delete state.examSeen[key(it)]; });
       unseen = list.slice();
     }
 
@@ -978,7 +1072,7 @@
       var already = list.filter(function (it) { return chosen.indexOf(it) === -1; });
       chosen = chosen.concat(shuffle(already).slice(0, n - chosen.length));
     }
-    chosen.forEach(function (it) { state.examSeen[it.kana] = true; });
+    chosen.forEach(function (it) { state.examSeen[key(it)] = true; });
     return chosen;
   }
 
@@ -987,13 +1081,13 @@
     if (!chars.length) return;
 
     var parts = [];
-    var readItems = examPick(chars, EXAM_SIZE.read);
+    var readItems = examPick(chars, EXAM_SIZE.read, '');
     if (readItems.length) parts.push({ mode: 'read', label: 'Identify', items: readItems });
 
-    var writeItems = examPick(chars, EXAM_SIZE.write);
+    var writeItems = examPick(chars, EXAM_SIZE.write, '');
     if (writeItems.length) parts.push({ mode: 'write', label: 'Write', items: writeItems });
 
-    var wordItems = examPick(wordPool(), EXAM_SIZE.words);
+    var wordItems = examPick(wordPool(), EXAM_SIZE.words, 'w:');
     if (wordItems.length) parts.push({ mode: 'words', label: 'Reading', items: wordItems });
 
     if (!parts.length) return;
@@ -1144,6 +1238,7 @@
     show('exam');
   }
 
+  $('goChart').addEventListener('click', function () { drawReference(); openChart(); });
   $('goExam').addEventListener('click', startExam);
   $('examAgain').addEventListener('click', startExam);
 
@@ -1209,6 +1304,7 @@
   rebuildCombo();
   setDifficulty(state.difficulty);
   setWordRomaji(state.wordRomaji);
+  setWordSound(state.wordSound);
   updateScore();
   toHome();
 })();

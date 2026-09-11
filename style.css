@@ -608,3 +608,20 @@ body {
 
 /* During an exam the tapped answer is acknowledged but not judged. */
 .choice.picked { border-color: var(--accent); background: var(--card-2); }
+
+/* Replay the word. Appears with the answer, so it can never give one away. */
+.listen {
+  margin-top: 4px;
+  padding: 9px 18px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  touch-action: manipulation;
+}
+
+/* Reference cells are buttons that speak, so they need a press response. */
+#refChart .cell:active { background: var(--accent-soft); border-color: var(--accent); }

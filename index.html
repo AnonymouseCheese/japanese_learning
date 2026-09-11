@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=16">
+<link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
 
@@ -96,6 +96,10 @@
       <span class="menu-btn-main">Exam</span>
       <span class="menu-btn-sub" id="examCoverage">Identify, Write and Reading, scored at the end</span>
     </button>
+    <button id="goChart" class="link-btn">
+      <span id="chartLinkLabel">Chart</span>
+      <span class="chev">›</span>
+    </button>
     <button id="goPicker" class="link-btn">
       <span id="pickerCount">46 of 46 characters</span>
       <span class="chev">›</span>
@@ -159,6 +163,7 @@
     <span class="bar-title" id="wordsTitle">Words</span>
     <span class="bar-actions">
       <button id="wRomaji" class="mini">romaji</button>
+      <button id="wSound" class="mini">sound</button>
     </span>
     <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
   </header>
@@ -167,6 +172,7 @@
     <div id="wordKana" class="word-kana">ねこ</div>
     <div id="wordRomaji" class="word-romaji"></div>
     <div id="wordMeaning" class="word-meaning"></div>
+    <button id="wListen" class="listen hidden">♪ listen</button>
   </div>
 
   <div id="wordActions" class="actions">
@@ -184,8 +190,8 @@
     <button id="refClose" class="back" aria-label="Back to practice">‹</button>
     <span class="bar-title" id="refTitle">Chart</span>
   </header>
-  <p class="picker-hint">Everything currently being tested. Switched-off characters
-  are shown with a dashed outline.</p>
+  <p class="picker-hint" id="refHint">Everything currently being tested. Switched-off
+  characters are shown with a dashed outline.</p>
   <div class="chart-scroll">
     <div id="refChart" class="chart"></div>
   </div>
@@ -243,8 +249,8 @@
   </div>
 </section>
 
-<script src="data.js?v=16"></script>
-<script src="words.js?v=16"></script>
-<script src="app.js?v=16"></script>
+<script src="data.js?v=17"></script>
+<script src="words.js?v=17"></script>
+<script src="app.js?v=17"></script>
 </body>
 </html>
