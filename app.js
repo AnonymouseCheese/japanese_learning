@@ -15,6 +15,8 @@
     wordRomaji: false,         // show the reading before you have answered?
     difficulty: 'easy',        // easy | medium | hard - where wrong answers come from
     writeOrder: 'random',      // random | list - how Write picks the next character
+    exam: null,                // the exam in progress, or null
+    examSeen: {},              // what this round of exams has already covered
     listIndex: 0,              // position through the chart when running in order
     off: {},                   // kana -> true means "switched off"
     stats: {},                 // kana -> { seen, wrong }
@@ -36,6 +38,7 @@
       if (saved.set) current = setById(saved.set);
       if (saved.combo && saved.combo.length) state.combo = saved.combo;
       if (typeof saved.wordRomaji === 'boolean') state.wordRomaji = saved.wordRomaji;
+      state.examSeen = saved.examSeen || {};
       return;
     }
 
@@ -56,7 +59,7 @@
     try {
       localStorage.setItem(STORE, JSON.stringify({
         off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id,
-        combo: state.combo, wordRomaji: state.wordRomaji
+        combo: state.combo, wordRomaji: state.wordRomaji, examSeen: state.examSeen
       }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
@@ -207,7 +210,8 @@
     write: $('writeScreen'),
     picker: $('pickerScreen'),
     words: $('wordsScreen'),
-    reference: $('refScreen')
+    reference: $('refScreen'),
+    exam: $('examScreen')
   };
 
   var readKana = $('readKana'), choices = $('choices'), readFeedback = $('readFeedback');
@@ -228,10 +232,12 @@
   }
 
   function toHome() {
+    endExam();
     show('home');
   }
 
   function toMenu() {
+    endExam();
     show('menu');
     refreshMenu();
   }
@@ -321,6 +327,12 @@
     $('goRead').disabled = on === 0;
     $('goWrite').disabled = on === 0;
     $('goList').disabled = on === 0;
+    $('goExam').disabled = on === 0;
+
+    var covered = pool().filter(function (k) { return state.examSeen[k.kana]; }).length;
+    $('examCoverage').textContent = on
+      ? 'Identify, Write and Reading · ' + covered + ' of ' + on + ' characters examined so far'
+      : 'nothing switched on';
     $('listCount').textContent = on
       ? 'Write all ' + on + ' in chart order'
       : 'nothing switched on';
@@ -365,14 +377,21 @@
 
   // ---------- identify ----------
   function nextRead() {
+    var target = pick();
+    if (!target) { toMenu(); return; }
+    remember(target.kana);
+    presentRead(target);
+  }
+
+  // Draw one Identify question. Split out from nextRead so the exam can hand it
+  // a specific character rather than letting the weighting choose.
+  function presentRead(item) {
     state.locked = false;
-    state.current = pick();
-    if (!state.current) { toMenu(); return; }
-    remember(state.current.kana);
-    readKana.textContent = state.current.kana;
+    state.current = item;
+    readKana.textContent = item.kana;
     readFeedback.textContent = '';
 
-    var options = answerSet(state.current);
+    var options = answerSet(item);
     choices.innerHTML = '';
     options.forEach(function (opt, i) {
       var b = document.createElement('button');
@@ -399,6 +418,15 @@
     state.locked = true;
 
     var correct = opt.kana === state.current.kana;
+
+    // In an exam nothing is marked right or wrong until the end - the tapped
+    // button just registers and the next question comes up.
+    if (state.exam) {
+      button.classList.add('picked');
+      Array.prototype.forEach.call(choices.children, function (el) { el.disabled = true; });
+      setTimeout(function () { examAnswer(correct); }, 170);
+      return;
+    }
     var s = stat(state.current.kana);
     s.seen++;
     state.total++;
@@ -498,17 +526,22 @@
       var seq = pool();
       if (!seq.length) { toMenu(); return; }
       if (state.listIndex >= seq.length) { showListDone(seq.length); return; }
-      state.current = seq[state.listIndex];
       $('writePos').textContent = (state.listIndex + 1) + ' of ' + seq.length;
+      presentWrite(seq[state.listIndex]);
     } else {
-      state.current = pick();
-      if (!state.current) { toMenu(); return; }
-      remember(state.current.kana);
+      var target = pick();
+      if (!target) { toMenu(); return; }
+      remember(target.kana);
+      presentWrite(target);
     }
+  }
+
+  function presentWrite(item) {
+    state.current = item;
     $('listDone').classList.add('hidden');
     ghost.classList.remove('show');            // hide before loading the next answer in
-    writeRomaji.textContent = labelText(state.current);
-    ghost.textContent = state.current.kana;
+    writeRomaji.textContent = labelText(item);
+    ghost.textContent = item.kana;
     writeActions.classList.remove('hidden');
     gradeActions.classList.add('hidden');
     clearPad();
@@ -531,6 +564,7 @@
   }
 
   function gradeWrite(correct) {
+    if (state.exam) { examAnswer(correct); return; }
     var s = stat(state.current.kana);
     s.seen++;
     state.total++;
@@ -862,11 +896,17 @@
   }
 
   function nextWord() {
-    state.current = pickWord();
-    if (!state.current) { toHome(); return; }
-    remember(state.current.kana);
-    $('wordKana').textContent = state.current.kana;
-    $('wordRomaji').textContent = state.wordRomaji ? state.current.romaji : '';
+    var word = pickWord();
+    if (!word) { toHome(); return; }
+    remember(word.kana);
+    presentWord(word);
+  }
+
+  function presentWord(item) {
+    state.current = item;
+    $('wordKana').textContent = item.kana;
+    // the romaji chip is ignored during an exam - the reading is the question
+    $('wordRomaji').textContent = (state.wordRomaji && !state.exam) ? item.romaji : '';
     $('wordMeaning').textContent = '';
     $('wordActions').classList.remove('hidden');
     $('wordGrade').classList.add('hidden');
@@ -880,6 +920,7 @@
   }
 
   function gradeWord(correct) {
+    if (state.exam) { examAnswer(correct); return; }
     var st = stat(state.current.kana);
     st.seen++;
     state.total++;
@@ -912,6 +953,199 @@
       $('wordRomaji').textContent = state.wordRomaji ? state.current.romaji : '';
     }
   });
+
+
+  // ---------- exam ----------
+  // An exam is deliberately unlike practice. Fixed length, no weighting toward
+  // your weak spots, no feedback until the end, and no reference chart. Three
+  // parts: Identify, Write, Reading.
+  var EXAM_SIZE = { read: 10, write: 10, words: 5 };
+
+  // Choosing what to test. Items the current round of exams has not covered yet
+  // come first, so a few exams sweep the whole set rather than asking the same
+  // characters every time. When everything has been covered the round restarts.
+  function examPick(list, n) {
+    if (!list.length) return [];
+
+    var unseen = list.filter(function (it) { return !state.examSeen[it.kana]; });
+    if (!unseen.length) {
+      list.forEach(function (it) { delete state.examSeen[it.kana]; });
+      unseen = list.slice();
+    }
+
+    var chosen = shuffle(unseen.slice()).slice(0, n);
+    if (chosen.length < n) {
+      var already = list.filter(function (it) { return chosen.indexOf(it) === -1; });
+      chosen = chosen.concat(shuffle(already).slice(0, n - chosen.length));
+    }
+    chosen.forEach(function (it) { state.examSeen[it.kana] = true; });
+    return chosen;
+  }
+
+  function startExam() {
+    var chars = pool();
+    if (!chars.length) return;
+
+    var parts = [];
+    var readItems = examPick(chars, EXAM_SIZE.read);
+    if (readItems.length) parts.push({ mode: 'read', label: 'Identify', items: readItems });
+
+    var writeItems = examPick(chars, EXAM_SIZE.write);
+    if (writeItems.length) parts.push({ mode: 'write', label: 'Write', items: writeItems });
+
+    var wordItems = examPick(wordPool(), EXAM_SIZE.words);
+    if (wordItems.length) parts.push({ mode: 'words', label: 'Reading', items: wordItems });
+
+    if (!parts.length) return;
+
+    state.exam = {
+      parts: parts,
+      p: 0,
+      i: 0,
+      done: 0,
+      total: parts.reduce(function (n, part) { return n + part.items.length; }, 0),
+      results: {},
+      missed: []
+    };
+    parts.forEach(function (part) {
+      state.exam.results[part.mode] = { right: 0, total: part.items.length, label: part.label };
+    });
+
+    setExamChrome(true);
+    save();
+    examShow();
+  }
+
+  // The chart button, the list controls and the romaji chip all have to go -
+  // they would each hand you an answer.
+  function setExamChrome(on) {
+    all('[data-chart]').forEach(function (b) { b.classList.toggle('hidden', on); });
+    $('wRomaji').classList.toggle('hidden', on);
+    $('btnPrev').classList.toggle('hidden', on || state.writeOrder !== 'list');
+    $('writePos').classList.toggle('hidden', on || state.writeOrder !== 'list');
+  }
+
+  function endExam() {
+    if (!state.exam) return;
+    state.exam = null;
+    setExamChrome(false);
+    $('readTitle').textContent = 'Identify';
+    $('writeTitle').textContent = 'Write';
+    $('wordsTitle').textContent = 'Words';
+  }
+
+  function examShow() {
+    var ex = state.exam;
+    if (!ex) return;
+
+    if (ex.p >= ex.parts.length) { showExamResult(); return; }
+    var part = ex.parts[ex.p];
+    if (ex.i >= part.items.length) { ex.p++; ex.i = 0; examShow(); return; }
+
+    var item = part.items[ex.i];
+    all('.js-right').forEach(function (el) { el.textContent = ex.done + 1; });
+    all('.js-total').forEach(function (el) { el.textContent = ex.total; });
+
+    if (part.mode === 'read') {
+      $('readTitle').textContent = 'Exam · Identify';
+      show('read');
+      presentRead(item);
+    } else if (part.mode === 'write') {
+      $('writeTitle').textContent = 'Exam · Write';
+      show('write');
+      presentWrite(item);
+      requestAnimationFrame(sizePad);
+    } else {
+      $('wordsTitle').textContent = 'Exam · Reading';
+      show('words');
+      presentWord(item);
+    }
+  }
+
+  function examAnswer(correct) {
+    var ex = state.exam;
+    if (!ex) return;
+
+    var part = ex.parts[ex.p];
+    var item = part.items[ex.i];
+    var st = stat(item.kana);
+    st.seen++;
+
+    if (correct) {
+      ex.results[part.mode].right++;
+      if (st.wrong > 0) st.wrong--;
+    } else {
+      st.wrong++;
+      ex.missed.push({
+        kana: item.kana,
+        label: item.meaning ? item.romaji + ' - ' + item.meaning : labelText(item),
+        part: part.label
+      });
+    }
+
+    ex.done++;
+    ex.i++;
+    save();
+    examShow();
+  }
+
+  function examRow(left, right, leftClass) {
+    var row = document.createElement('div');
+    row.className = 'exam-row';
+    var a = document.createElement('span');
+    if (leftClass) a.className = leftClass;
+    a.textContent = left;
+    var b = document.createElement(leftClass ? 'span' : 'b');
+    if (leftClass) b.className = 'exam-label';
+    b.textContent = right;
+    row.appendChild(a);
+    row.appendChild(b);
+    return row;
+  }
+
+  function showExamResult() {
+    var ex = state.exam;
+    var right = 0;
+    ex.parts.forEach(function (part) { right += ex.results[part.mode].right; });
+
+    $('examScore').textContent = right;
+    $('examTotal').textContent = ex.total;
+
+    var breakdown = $('examBreakdown');
+    breakdown.innerHTML = '';
+    ex.parts.forEach(function (part) {
+      var r = ex.results[part.mode];
+      breakdown.appendChild(examRow(r.label, r.right + ' / ' + r.total));
+    });
+
+    var missed = $('examMissed');
+    missed.innerHTML = '';
+    if (!ex.missed.length) {
+      var clean = document.createElement('div');
+      clean.className = 'exam-clean';
+      clean.textContent = 'Nothing missed.';
+      missed.appendChild(clean);
+    } else {
+      var head = document.createElement('div');
+      head.className = 'exam-missed-head';
+      head.textContent = 'Missed';
+      missed.appendChild(head);
+      ex.missed.forEach(function (m) {
+        missed.appendChild(examRow(m.kana, m.label + '  ·  ' + m.part, 'exam-kana'));
+      });
+    }
+
+    state.exam = null;
+    setExamChrome(false);
+    $('readTitle').textContent = 'Identify';
+    $('writeTitle').textContent = 'Write';
+    $('wordsTitle').textContent = 'Words';
+    save();
+    show('exam');
+  }
+
+  $('goExam').addEventListener('click', startExam);
+  $('examAgain').addEventListener('click', startExam);
 
   // ---------- keyboard (desktop) ----------
   document.addEventListener('keydown', function (e) {

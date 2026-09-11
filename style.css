@@ -546,3 +546,65 @@ body {
   color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- exam ---------- */
+/* Sits apart from the practice modes, in the menu foot. */
+.menu-btn-exam {
+  padding: 18px 20px;
+  margin-bottom: 10px;
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.menu-btn-exam .menu-btn-main { font-size: 20px; color: var(--accent); }
+
+.exam-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.exam-score {
+  text-align: center;
+  padding: 18px 0 10px;
+  font-size: 56px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.exam-of { color: var(--dim); margin: 0 10px; font-weight: 400; }
+
+.exam-breakdown { margin-bottom: 22px; }
+
+.exam-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 6px;
+  font-size: 15px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.exam-row b { font-variant-numeric: tabular-nums; }
+
+.exam-missed-head {
+  margin: 0 2px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.exam-kana { font-family: var(--kana); font-size: 24px; }
+.exam-label { font-size: 14px; color: var(--dim); text-align: right; }
+.exam-clean { padding: 10px 2px; font-size: 15px; color: var(--good); }
+
+/* During an exam the tapped answer is acknowledged but not judged. */
+.choice.picked { border-color: var(--accent); background: var(--card-2); }

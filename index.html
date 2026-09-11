@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
 
@@ -92,6 +92,10 @@
   </div>
 
   <div class="menu-foot">
+    <button id="goExam" class="menu-btn menu-btn-exam">
+      <span class="menu-btn-main">Exam</span>
+      <span class="menu-btn-sub" id="examCoverage">Identify, Write and Reading, scored at the end</span>
+    </button>
     <button id="goPicker" class="link-btn">
       <span id="pickerCount">46 of 46 characters</span>
       <span class="chev">›</span>
@@ -104,7 +108,7 @@
 <section id="readScreen" class="screen hidden">
   <header class="bar">
     <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
-    <span class="bar-title">Identify</span>
+    <span class="bar-title" id="readTitle">Identify</span>
     <span class="bar-actions"><button class="mini" data-chart>chart</button></span>
     <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
   </header>
@@ -190,6 +194,26 @@
   </div>
 </section>
 
+<!-- ===== EXAM RESULT ===== -->
+<section id="examScreen" class="screen hidden">
+  <header class="bar">
+    <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
+    <span class="bar-title">Exam result</span>
+  </header>
+
+  <div class="exam-scroll">
+    <div class="exam-score">
+      <span id="examScore">0</span><span class="exam-of">/</span><span id="examTotal">0</span>
+    </div>
+    <div id="examBreakdown" class="exam-breakdown"></div>
+    <div id="examMissed" class="exam-missed"></div>
+  </div>
+
+  <div class="actions">
+    <button id="examAgain" class="btn btn-primary">Another exam</button>
+  </div>
+</section>
+
 <!-- ===== CHARACTER PICKER ===== -->
 <section id="pickerScreen" class="screen hidden">
   <header class="bar">
@@ -219,8 +243,8 @@
   </div>
 </section>
 
-<script src="data.js?v=15"></script>
-<script src="words.js?v=15"></script>
-<script src="app.js?v=15"></script>
+<script src="data.js?v=16"></script>
+<script src="words.js?v=16"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>

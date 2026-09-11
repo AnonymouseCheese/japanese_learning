@@ -15,8 +15,8 @@ The app opens on a **set chooser**:
   words borrowed from other languages, foreign names and sound effects.
 - **Combination** — several sets mixed together.
 
-Each one opens the same menu of four modes: **Identify**, **Write**, **List**
-and **Words**.
+Each one opens the same menu of four practice modes — **Identify**, **Write**,
+**List** and **Words** — plus an **Exam**.
 
 ## Combination
 
@@ -40,10 +40,10 @@ Which words you get depends on the set you are in:
 
 | Set | Words | Rule |
 | --- | --- | --- |
-| Hiragana | 111 | Spelled with nothing but the 46 basic hiragana |
-| Dakuten | 47 | Contains at least one ゛ or ゜ character |
-| Katakana | 52 | Spelled with nothing but the 46 katakana |
-| Combination | up to 210 | Anything spelled inside the ticked sets |
+| Hiragana | 187 | Spelled with nothing but the 46 basic hiragana |
+| Dakuten | 73 | Contains at least one ゛ or ゜ character |
+| Katakana | 64 | Spelled with nothing but the 46 katakana |
+| Combination | up to 324 | Anything spelled inside the ticked sets |
 
 The **romaji** chip in the corner decides whether the reading is shown up front
 or only after you answer. Off is the real practice; on is useful when you are
@@ -100,6 +100,39 @@ Every other character just shows its romaji.
   after き is a different skill from recognising く on its own. It follows your
   selection, so with only the か row switched on it walks か き く け こ and
   finishes.
+
+## Exam
+
+Practice is deliberately unfair: it repeats what you are weak on, skips what you
+know, gives instant feedback and never ends. That makes the running score
+meaningless. An exam is the opposite.
+
+Three parts, run back to back:
+
+| Part | Questions | Scored |
+| --- | --- | --- |
+| Identify | 10 | By the app |
+| Write | 10 | By you |
+| Reading | 5 | By you |
+
+Nothing is marked right or wrong while you are in it. The chart button, the
+romaji chip and the list controls are all hidden, since each would hand you an
+answer. The counter in the corner shows the question number rather than a score.
+
+At the end you get the total, a breakdown by part, and a list of exactly what
+you missed and where. Identify is the trustworthy number, because it is the only
+part the app can mark itself.
+
+### How everything eventually gets tested
+
+An exam samples 25 questions rather than running all 46 characters, but it
+prefers what the current round has not covered yet. Each exam takes twenty
+characters it has not asked before, so three exams sweep the whole set and then
+the round starts again. The menu shows where you are — *20 of 46 characters
+examined so far*.
+
+Exam answers feed the same progress the practice modes use, so missing something
+in an exam pushes it forward in practice afterwards.
 
 ## What it remembers
 
