@@ -952,10 +952,16 @@
     if (!speech.voice) chooseVoice();          // voices often arrive late on a phone
     primeSpeech();
 
+    // A lone character gives the synthesiser no room and it starts rendering
+    // part way through the vowel - あ is the worst of them. A pause character
+    // inside the utterance gives it something to begin on. Words are long
+    // enough already, so they are left exactly as they are.
+    var phrase = Array.prototype.slice.call(text).length === 1 ? '、' + text : text;
+
     try {
       var speakIt = function () {
         window.speechSynthesis.speak(utter(' ', 0));   // warm the audio session
-        window.speechSynthesis.speak(utter(text));
+        window.speechSynthesis.speak(utter(phrase));
       };
 
       if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
