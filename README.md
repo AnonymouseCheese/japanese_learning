@@ -45,12 +45,14 @@ Which words you get depends on the set you are in:
 | Katakana | 64 | Spelled with nothing but the 46 katakana |
 | Combination | up to 324 | Anything spelled inside the ticked sets |
 
-Two chips in the corner, both showing their state by lighting up:
+The **romaji** chip in the corner decides whether the reading is shown up front
+or only after you answer. Off is the real practice; on is useful when you are
+still slow.
 
-- **romaji** — whether the reading is shown up front or only after you answer.
-  Off is the real practice; on is useful when you are still slow.
-- **sound** — whether the word is read aloud when the answer appears. A
-  **♪ listen** button sits with the answer either way, to replay it.
+The word is read aloud when the answer appears, and a **♪ listen** button sits
+with the answer to replay it in one tap. There is no on/off switch: a toggle
+meant that if it was already on, the first tap turned it off and you needed a
+second to hear anything.
 
 ## Sound
 

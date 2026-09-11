@@ -13,7 +13,6 @@
     chartFrom: 'read',         // which drill the reference chart was opened from
     combo: ['hiragana', 'dakuten', 'katakana'],   // ticked in the combination set
     wordRomaji: false,         // show the reading before you have answered?
-    wordSound: true,           // say the word out loud when the answer shows?
     difficulty: 'easy',        // easy | medium | hard - where wrong answers come from
     writeOrder: 'random',      // random | list - how Write picks the next character
     exam: null,                // the exam in progress, or null
@@ -40,7 +39,6 @@
       if (saved.combo && saved.combo.length) state.combo = saved.combo;
       if (typeof saved.wordRomaji === 'boolean') state.wordRomaji = saved.wordRomaji;
       state.examSeen = saved.examSeen || {};
-      if (typeof saved.wordSound === 'boolean') state.wordSound = saved.wordSound;
       return;
     }
 
@@ -61,8 +59,7 @@
     try {
       localStorage.setItem(STORE, JSON.stringify({
         off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id,
-        combo: state.combo, wordRomaji: state.wordRomaji, examSeen: state.examSeen,
-        wordSound: state.wordSound
+        combo: state.combo, wordRomaji: state.wordRomaji, examSeen: state.examSeen
       }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
@@ -1040,7 +1037,7 @@
     $('wordActions').classList.add('hidden');
     $('wordGrade').classList.remove('hidden');
     $('wListen').classList.toggle('hidden', !speech.ok);
-    if (state.wordSound) say(state.current.kana);
+    say(state.current.kana);
   }
 
   function gradeWord(correct) {
@@ -1067,21 +1064,9 @@
     save();
   }
 
-  function setWordSound(on) {
-    state.wordSound = on;
-    $('wSound').classList.toggle('on-chip', on && speech.ok);
-    $('wSound').classList.toggle('hidden', !speech.ok);
-    save();
-  }
-
   $('wReveal').addEventListener('click', revealWord);
   $('wGot').addEventListener('click', function () { gradeWord(true); });
   $('wMissed').addEventListener('click', function () { gradeWord(false); });
-
-  $('wSound').addEventListener('click', function () {
-    setWordSound(!state.wordSound);
-    if (state.wordSound && state.current) say(state.current.kana);
-  });
 
   $('wListen').addEventListener('click', function () {
     if (state.current) say(state.current.kana);
@@ -1355,7 +1340,6 @@
   rebuildCombo();
   setDifficulty(state.difficulty);
   setWordRomaji(state.wordRomaji);
-  setWordSound(state.wordSound);
   updateScore();
   toHome();
 })();
