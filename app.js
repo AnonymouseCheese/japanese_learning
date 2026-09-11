@@ -910,15 +910,60 @@
 
   // Kana is already phonetic, so the word itself is what gets spoken. Slightly
   // slower than normal - a learner needs to hear the individual sounds.
+  //
+  // Two things stop the start being clipped, which is very audible on a single
+  // vowel like あ:
+  //
+  //   1. A silent utterance is queued first. The audio session takes a moment to
+  //      open, and whatever is playing while it does gets swallowed - so let it
+  //      swallow silence instead of the first half of the answer.
+  //   2. Cancelling and speaking in the same tick drops or truncates the new
+  //      utterance on several engines, so a cancel is given a moment to land.
+  function utter(text, volume) {
+    var u = new window.SpeechSynthesisUtterance(text);
+    u.lang = 'ja-JP';
+    if (speech.voice) u.voice = speech.voice;
+    u.rate = 0.85;
+    if (typeof volume === 'number') u.volume = volume;
+    return u;
+  }
+
+  // The very first speak of a page's life is often dropped outright, which is why
+  // a listen button can need tapping twice. Opening the session on the first
+  // touch anywhere in the app means it is already warm by the time you ask for
+  // audio. Silent, so nothing is heard.
+  var speechPrimed = false;
+
+  function primeSpeech() {
+    if (!speech.ok || speechPrimed) return;
+    speechPrimed = true;
+    try { window.speechSynthesis.speak(utter(' ', 0)); } catch (e) {}
+  }
+
+  if (speech.ok) {
+    try {
+      document.addEventListener('pointerdown', primeSpeech, true);
+      document.addEventListener('click', primeSpeech, true);
+    } catch (e) {}
+  }
+
   function say(text) {
     if (!speech.ok || !text) return;
+    if (!speech.voice) chooseVoice();          // voices often arrive late on a phone
+    primeSpeech();
+
     try {
-      window.speechSynthesis.cancel();
-      var u = new window.SpeechSynthesisUtterance(text);
-      u.lang = 'ja-JP';
-      if (speech.voice) u.voice = speech.voice;
-      u.rate = 0.85;
-      window.speechSynthesis.speak(u);
+      var speakIt = function () {
+        window.speechSynthesis.speak(utter(' ', 0));   // warm the audio session
+        window.speechSynthesis.speak(utter(text));
+      };
+
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
+        setTimeout(speakIt, 80);
+      } else {
+        speakIt();
+      }
     } catch (e) { /* not worth interrupting practice over */ }
   }
 

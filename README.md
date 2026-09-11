@@ -59,6 +59,13 @@ nothing to license, and it works offline. iOS ships Japanese voices, so a phone
 reads kana properly. Where a browser has no speech support the controls simply
 do not appear.
 
+Browser speech needs a little coaxing to start cleanly. Two things are done for
+it: a silent utterance is queued ahead of every spoken one, because the audio
+session takes a moment to open and swallows whatever is playing while it does;
+and the session is opened on your first touch anywhere in the app, because the
+very first speak of a page's life is often dropped outright — which is what makes
+a listen button seem to need two taps.
+
 It is deliberately limited to two places:
 
 - **Words**, when the answer is revealed — never before, or it would be the
