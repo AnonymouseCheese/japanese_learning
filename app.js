@@ -916,12 +916,16 @@
   //      swallow silence instead of the first half of the answer.
   //   2. Cancelling and speaking in the same tick drops or truncates the new
   //      utterance on several engines, so a cancel is given a moment to land.
+  // The default voice is shrill and runs at full volume, which is painful on a
+  // phone held close. Pitch is the lever for the sharpness, volume for the rest;
+  // both sit below their defaults of 1.
   function utter(text, volume) {
     var u = new window.SpeechSynthesisUtterance(text);
     u.lang = 'ja-JP';
     if (speech.voice) u.voice = speech.voice;
     u.rate = 0.85;
-    if (typeof volume === 'number') u.volume = volume;
+    u.pitch = 0.9;
+    u.volume = (typeof volume === 'number') ? volume : 0.7;
     return u;
   }
 
