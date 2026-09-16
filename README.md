@@ -40,10 +40,10 @@ Which words you get depends on the set you are in:
 
 | Set | Words | Rule |
 | --- | --- | --- |
-| Hiragana | 187 | Spelled with nothing but the 46 basic hiragana |
-| Dakuten | 73 | Contains at least one ゛ or ゜ character |
-| Katakana | 64 | Spelled with nothing but the 46 katakana |
-| Combination | up to 324 | Anything spelled inside the ticked sets |
+| Hiragana | 316 | Spelled with nothing but the 46 basic hiragana |
+| Dakuten | 127 | Contains at least one ゛ or ゜ character |
+| Katakana | 101 | Spelled with nothing but the 46 katakana |
+| Combination | up to 544 | Anything spelled inside the ticked sets |
 
 The **romaji** chip in the corner decides whether the reading is shown up front
 or only after you answer. Off is the real practice; on is useful when you are
@@ -90,6 +90,12 @@ those characters get sets of their own.
 
 None of this is tagged by hand — a word's set is worked out from its characters,
 so the lists cannot drift out of step.
+
+Four characters never appear in any word, and cannot. **を** is the object
+particle: it only ever appears between words, never inside one. **ヲ** is its
+katakana twin and is effectively unused in modern Japanese. **ヌ** and **ヨ**
+appear in plenty of loanwords, but every common one also needs the long mark ー
+or a katakana dakuten, neither of which the app teaches yet.
 
 Picking one opens the **main menu** with the practice modes. Drill for as
 long as you like, tap **‹** to come back, and **‹** again to switch sets. Below
