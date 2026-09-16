@@ -40,8 +40,21 @@ with word order, Japanese does it with these.
 
 A sentence appears with no spaces between the words, because real Japanese has
 none and working out where one word ends is half the skill. Reveal it and the
-same characters reappear split into words, with the particles picked out in
-colour, plus the reading, the meaning, and a note on the particle at work.
+same characters reappear split into words, **each with its own meaning printed
+underneath**, particles picked out in colour, plus the reading, the whole
+translation, and a note on the particle at work.
+
+That word-by-word line is what makes the order readable. Japanese puts the verb
+last, and the particles — not the order — say who did what, so a sentence rarely
+maps onto English one word at a time:
+
+```
+ねこ    が          みず     を          のみます
+cat   (subject)   water   (object)    drinks
+```
+
+は が を か are labelled rather than translated, because they mark a role and
+have no English equivalent. に と で から do translate, and are.
 
 65 sentences covering all twelve of は を に が の も と で へ か から まで.
 

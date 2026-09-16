@@ -691,3 +691,29 @@ body {
   background: var(--card-2);
   border-radius: 12px;
 }
+
+/* Shown instead of hidden when the volume is off, so it is obvious why nothing
+   is happening rather than the button just vanishing. */
+.listen-off {
+  color: var(--dim);
+  background: transparent;
+  border-color: var(--line);
+}
+
+/* Each word sits above its own meaning, so which is which is never in doubt. */
+.part-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.part-gloss {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--dim);
+  max-width: 88px;
+}
+
+/* particles do not translate, so their label is a job description */
+.part-gloss-particle { color: var(--accent); opacity: .85; }

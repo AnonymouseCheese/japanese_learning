@@ -940,6 +940,14 @@
 
   function soundOn() { return speech.ok && volumeLevel() > 0; }
 
+  // Hiding the button when sound is off left no clue why nothing happened, so
+  // it stays visible and says what is wrong.
+  function setListenButton(btn) {
+    btn.classList.toggle('hidden', !speech.ok);
+    btn.classList.toggle('listen-off', !soundOn());
+    btn.textContent = soundOn() ? '♪ listen' : '♪ sound is off';
+  }
+
   function setVolume(level) {
     if (typeof VOLUMES[level] !== 'number') level = 'mid';
     state.volume = level;
@@ -992,6 +1000,10 @@
 
     try {
       var speakIt = function () {
+        // Browsers pause the speech engine when the page is idle or in the
+        // background, and it stays paused - which looks exactly like audio
+        // having stopped working. Resuming costs nothing when it is not paused.
+        try { window.speechSynthesis.resume(); } catch (e) {}
         window.speechSynthesis.speak(utter(' ', 0));   // warm the audio session
         window.speechSynthesis.speak(utter(phrase));
       };
@@ -1071,7 +1083,7 @@
     $('wordMeaning').textContent = state.current.meaning;
     $('wordActions').classList.add('hidden');
     $('wordGrade').classList.remove('hidden');
-    $('wListen').classList.toggle('hidden', !soundOn());
+    setListenButton($('wListen'));
     say(state.current.kana);
   }
 
@@ -1359,10 +1371,24 @@
     var box = $('sentenceParts');
     box.innerHTML = '';
     item.parts.forEach(function (part) {
-      var span = document.createElement('span');
-      span.className = PARTICLES.indexOf(part) !== -1 ? 'part part-particle' : 'part';
-      span.textContent = part;
-      box.appendChild(span);
+      var isParticle = PARTICLES.indexOf(part) !== -1;
+
+      var col = document.createElement('span');
+      col.className = 'part-col';
+      col.dataset.kana = part;
+
+      var kana = document.createElement('span');
+      kana.className = isParticle ? 'part part-particle' : 'part';
+      kana.textContent = part;
+
+      // what this one word means, so the sentence can be read piece by piece
+      var gloss = document.createElement('span');
+      gloss.className = isParticle ? 'part-gloss part-gloss-particle' : 'part-gloss';
+      gloss.textContent = GLOSS[part] || '';
+
+      col.appendChild(kana);
+      col.appendChild(gloss);
+      box.appendChild(col);
     });
     $('sentenceKana').classList.add('hidden');
     box.classList.remove('hidden');
@@ -1370,7 +1396,7 @@
     $('sentenceRomaji').textContent = item.romaji;
     $('sentenceMeaning').textContent = item.meaning;
     $('sentenceNote').textContent = item.note || '';
-    $('sListen').classList.toggle('hidden', !soundOn());
+    setListenButton($('sListen'));
     $('sentenceActions').classList.add('hidden');
     $('sentenceGrade').classList.remove('hidden');
     say(item.parts.join(''));
