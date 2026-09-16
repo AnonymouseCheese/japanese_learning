@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=22">
+<link rel="stylesheet" href="style.css?v=23">
 </head>
 <body>
 
@@ -43,10 +43,18 @@
   </div>
 
   <div class="menu-foot">
+    <div id="volumeWrap" class="seg-wrap seg-wrap-tight">
+      <p class="seg-label">Sound — applies everywhere in the app</p>
+      <div class="seg">
+        <button class="seg-btn" data-vol="off">Off</button>
+        <button class="seg-btn" data-vol="low">Low</button>
+        <button class="seg-btn" data-vol="mid">Medium</button>
+        <button class="seg-btn" data-vol="high">Full</button>
+      </div>
+    </div>
     <p class="home-note">Hiragana writes native words and grammar. Katakana writes
     the same sounds for words borrowed from other languages. Dakuten are hiragana
-    you already know with a mark that changes the sound — か
-    <span class="kana-inline">ka</span> becomes が <span class="kana-inline">ga</span>.</p>
+    you already know with a mark that changes the sound.</p>
   </div>
 </section>
 
@@ -248,8 +256,8 @@
   </div>
 </section>
 
-<script src="data.js?v=22"></script>
-<script src="words.js?v=22"></script>
-<script src="app.js?v=22"></script>
+<script src="data.js?v=23"></script>
+<script src="words.js?v=23"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>

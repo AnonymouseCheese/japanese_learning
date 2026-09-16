@@ -56,6 +56,15 @@ second to hear anything.
 
 ## Sound
 
+One control sets the volume for everything: **Sound** on the opening screen,
+with **Off · Low · Medium · Full**. Picking a level plays a sample so you can
+hear what you chose. Every sound in the app is spoken through a single function,
+so there is exactly one place that decides how loud anything is — nothing can
+drift louder or quieter than anything else.
+
+**Off** silences the whole app: the listen button disappears, chart taps go
+quiet, and revealing a word says nothing.
+
 Audio uses the browser's own speech synthesis, so there are no files to host and
 nothing to license, and it works offline. iOS ships Japanese voices, so a phone
 reads kana properly. Where a browser has no speech support the controls simply

@@ -13,6 +13,7 @@
     chartFrom: 'read',         // which drill the reference chart was opened from
     combo: ['hiragana', 'dakuten', 'katakana'],   // ticked in the combination set
     wordRomaji: false,         // show the reading before you have answered?
+    volume: 'mid',             // off | low | mid | high - one setting for all audio
     difficulty: 'easy',        // easy | medium | hard - where wrong answers come from
     writeOrder: 'random',      // random | list - how Write picks the next character
     exam: null,                // the exam in progress, or null
@@ -39,6 +40,7 @@
       if (saved.combo && saved.combo.length) state.combo = saved.combo;
       if (typeof saved.wordRomaji === 'boolean') state.wordRomaji = saved.wordRomaji;
       state.examSeen = saved.examSeen || {};
+      if (saved.volume) state.volume = saved.volume;
       return;
     }
 
@@ -59,7 +61,8 @@
     try {
       localStorage.setItem(STORE, JSON.stringify({
         off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id,
-        combo: state.combo, wordRomaji: state.wordRomaji, examSeen: state.examSeen
+        combo: state.combo, wordRomaji: state.wordRomaji, examSeen: state.examSeen,
+        volume: state.volume
       }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
@@ -329,7 +332,7 @@
     $('goList').disabled = on === 0;
     $('goExam').disabled = on === 0;
 
-    $('chartLinkLabel').textContent = speech.ok
+    $('chartLinkLabel').textContent = soundOn()
       ? 'Chart · tap a character to hear it'
       : 'Chart';
 
@@ -361,6 +364,13 @@
   all('[data-back]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       if (btn.dataset.back === 'home') { toHome(); } else { toMenu(); }
+    });
+  });
+
+  all('[data-vol]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      setVolume(btn.dataset.vol);
+      if (soundOn()) say('こんにちは');       // so you can hear what you picked
     });
   });
 
@@ -793,7 +803,7 @@
   function openChart() {
     state.chartFrom = state.screen;
     $('refTitle').textContent = current.name + ' chart';
-    $('refHint').textContent = speech.ok
+    $('refHint').textContent = soundOn()
       ? 'Tap a character to hear it. Switched-off characters are shown with a dashed outline.'
       : 'Everything currently being tested. Switched-off characters are shown with a dashed outline.';
     drawReference();
@@ -919,13 +929,33 @@
   // The default voice is shrill and runs at full volume, which is painful on a
   // phone held close. Pitch is the lever for the sharpness, volume for the rest;
   // both sit below their defaults of 1.
+  // Every sound in the app is spoken through utter(), so this one setting is the
+  // only thing that decides how loud anything is.
+  var VOLUMES = { off: 0, low: 0.3, mid: 0.6, high: 1 };
+
+  function volumeLevel() {
+    return typeof VOLUMES[state.volume] === 'number' ? VOLUMES[state.volume] : VOLUMES.mid;
+  }
+
+  function soundOn() { return speech.ok && volumeLevel() > 0; }
+
+  function setVolume(level) {
+    if (typeof VOLUMES[level] !== 'number') level = 'mid';
+    state.volume = level;
+    all('[data-vol]').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.vol === level);
+    });
+    $('volumeWrap').classList.toggle('hidden', !speech.ok);
+    save();
+  }
+
   function utter(text, volume) {
     var u = new window.SpeechSynthesisUtterance(text);
     u.lang = 'ja-JP';
     if (speech.voice) u.voice = speech.voice;
     u.rate = 0.85;
     u.pitch = 0.9;
-    u.volume = (typeof volume === 'number') ? volume : 0.7;
+    u.volume = (typeof volume === 'number') ? volume : volumeLevel();
     return u;
   }
 
@@ -949,7 +979,7 @@
   }
 
   function say(text) {
-    if (!speech.ok || !text) return;
+    if (!soundOn() || !text) return;
     if (!speech.voice) chooseVoice();          // voices often arrive late on a phone
     primeSpeech();
 
@@ -1040,7 +1070,7 @@
     $('wordMeaning').textContent = state.current.meaning;
     $('wordActions').classList.add('hidden');
     $('wordGrade').classList.remove('hidden');
-    $('wListen').classList.toggle('hidden', !speech.ok);
+    $('wListen').classList.toggle('hidden', !soundOn());
     say(state.current.kana);
   }
 
@@ -1344,6 +1374,7 @@
   rebuildCombo();
   setDifficulty(state.difficulty);
   setWordRomaji(state.wordRomaji);
+  setVolume(state.volume);
   updateScore();
   toHome();
 })();
