@@ -213,6 +213,7 @@
     write: $('writeScreen'),
     picker: $('pickerScreen'),
     words: $('wordsScreen'),
+    sentence: $('sentenceScreen'),
     reference: $('refScreen'),
     exam: $('examScreen')
   };
@@ -1312,6 +1313,95 @@
   $('goExam').addEventListener('click', startExam);
   $('examAgain').addEventListener('click', startExam);
 
+
+  // ---------- sentences ----------
+  // Where words stop and Japanese starts. The particles - は を に が の も と で -
+  // carry no meaning on their own; they mark what job each word is doing. They
+  // are picked out in colour once the answer is showing.
+  function sentenceKey(item) { return 's:' + item.parts.join(''); }
+
+  function startSentences() {
+    if (!SENTENCES.length) return;
+    state.right = 0;
+    state.total = 0;
+    forgetRecent();
+    updateScore();
+    show('sentence');
+    nextSentence();
+  }
+
+  function nextSentence() {
+    var item = pickFrom(SENTENCES, sentenceKey);
+    if (!item) { toHome(); return; }
+    remember(sentenceKey(item));
+    presentSentence(item);
+  }
+
+  function presentSentence(item) {
+    state.current = item;
+    $('sentenceKana').textContent = item.parts.join('');
+    $('sentenceKana').classList.remove('hidden');
+    $('sentenceParts').classList.add('hidden');
+    $('sentenceParts').innerHTML = '';
+    $('sentenceRomaji').textContent = '';
+    $('sentenceMeaning').textContent = '';
+    $('sentenceNote').textContent = '';
+    $('sListen').classList.add('hidden');
+    $('sentenceActions').classList.remove('hidden');
+    $('sentenceGrade').classList.add('hidden');
+  }
+
+  function revealSentence() {
+    var item = state.current;
+
+    // the same characters, now split into words - that gap is what you were
+    // trying to find while reading it
+    var box = $('sentenceParts');
+    box.innerHTML = '';
+    item.parts.forEach(function (part) {
+      var span = document.createElement('span');
+      span.className = PARTICLES.indexOf(part) !== -1 ? 'part part-particle' : 'part';
+      span.textContent = part;
+      box.appendChild(span);
+    });
+    $('sentenceKana').classList.add('hidden');
+    box.classList.remove('hidden');
+
+    $('sentenceRomaji').textContent = item.romaji;
+    $('sentenceMeaning').textContent = item.meaning;
+    $('sentenceNote').textContent = item.note || '';
+    $('sListen').classList.toggle('hidden', !soundOn());
+    $('sentenceActions').classList.add('hidden');
+    $('sentenceGrade').classList.remove('hidden');
+    say(item.parts.join(''));
+  }
+
+  function gradeSentence(correct) {
+    var st = stat(sentenceKey(state.current));
+    st.seen++;
+    state.total++;
+    if (correct) {
+      state.right++;
+      if (st.wrong > 0) st.wrong--;
+    } else {
+      st.wrong++;
+    }
+    updateScore();
+    save();
+    nextSentence();
+  }
+
+  $('sReveal').addEventListener('click', revealSentence);
+  $('sGot').addEventListener('click', function () { gradeSentence(true); });
+  $('sMissed').addEventListener('click', function () { gradeSentence(false); });
+  $('sListen').addEventListener('click', function () {
+    if (state.current && state.current.parts) say(state.current.parts.join(''));
+  });
+
+  all('[data-sentences]').forEach(function (btn) {
+    btn.addEventListener('click', startSentences);
+  });
+
   // ---------- keyboard (desktop) ----------
   document.addEventListener('keydown', function (e) {
     if (state.screen === 'home') return;
@@ -1325,6 +1415,14 @@
     }
     if (state.screen === 'reference') {
       if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeChart(); }
+      return;
+    }
+    if (state.screen === 'sentence') {
+      if (e.key === 'Escape') { toHome(); return; }
+      var revealed = !$('sentenceGrade').classList.contains('hidden');
+      if (!revealed && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); revealSentence(); }
+      else if (revealed && (e.key === 'y' || e.key === 'ArrowRight' || e.key === 'Enter')) { e.preventDefault(); gradeSentence(true); }
+      else if (revealed && (e.key === 'n' || e.key === 'ArrowLeft')) { e.preventDefault(); gradeSentence(false); }
       return;
     }
     if (state.screen === 'words') {

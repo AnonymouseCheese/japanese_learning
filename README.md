@@ -14,6 +14,7 @@ The app opens on a **set chooser**:
 - **Katakana** — the same 46 sounds as hiragana in different shapes, used for
   words borrowed from other languages, foreign names and sound effects.
 - **Combination** — several sets mixed together.
+- **Sentences** — whole sentences, and the particles that hold them together.
 
 Each one opens the same menu of four practice modes — **Identify**, **Write**,
 **List** and **Words** — plus an **Exam**.
@@ -29,6 +30,28 @@ The character picker keeps the sets apart rather than running their rows
 together: one labelled block per ticked set, each with its own column buttons.
 So a column toggle in the hiragana block switches off あ か さ た な は ま や ら わ ん
 and leaves katakana alone. The reference chart is grouped the same way.
+
+## Sentences
+
+Words tell you what things are called. Sentences are where Japanese starts, and
+the difference is the **particles** — は を に が の も と で へ. They carry no
+meaning on their own; they mark what job each word is doing. English does that
+with word order, Japanese does it with these.
+
+A sentence appears with no spaces between the words, because real Japanese has
+none and working out where one word ends is half the skill. Reveal it and the
+same characters reappear split into words, with the particles picked out in
+colour, plus the reading, the meaning, and a note on the particle at work.
+
+65 sentences covering all twelve of は を に が の も と で へ か から まで.
+
+This is also the only place **を** can be taught. It is purely a particle — it
+never appears inside a word — so no word list could ever have shown it to you in
+use.
+
+The sentences are written for this app rather than taken from anywhere, which
+means they stick to exactly the characters it teaches: no small っ ゃ ゅ ょ and no
+long ー. That is why there is no がっこう and no でんしゃ here either.
 
 ## Words
 
@@ -318,4 +341,5 @@ fresh download. Then pull down to refresh on the phone.
 | `style.css` | All the appearance. Follows your phone's light/dark setting. |
 | `data.js` | The character sets, their charts, and the look-alike groups. |
 | `words.js` | The word list for reading practice — kana, reading, meaning. |
+| `sentences.js` | The sentences, split into words, with a note on each particle. |
 | `app.js` | The logic — screens, choosing characters, scoring, the drawing pad. |

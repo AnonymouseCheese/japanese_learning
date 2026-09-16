@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=23">
+<link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 
@@ -34,6 +34,11 @@
       <span class="menu-btn-kana">ア イ ウ エ オ</span>
       <span class="menu-btn-main">Katakana</span>
       <span class="menu-btn-sub">The same 46 sounds, for foreign words</span>
+    </button>
+    <button class="menu-btn" data-sentences="1">
+      <span class="menu-btn-kana">ねこ が みず を のむ</span>
+      <span class="menu-btn-main">Sentences</span>
+      <span class="menu-btn-sub" id="sentenceCount">Read whole sentences, and meet the particles</span>
     </button>
     <button class="menu-btn" data-set="combo">
       <span class="menu-btn-kana">あ · が · ア</span>
@@ -207,6 +212,34 @@
   </div>
 </section>
 
+<!-- ===== SENTENCES ===== -->
+<section id="sentenceScreen" class="screen hidden">
+  <header class="bar">
+    <button class="back" data-back="home" aria-label="Back">‹</button>
+    <span class="bar-title">Sentences</span>
+    <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
+  </header>
+
+  <div class="sentence-scroll">
+    <div class="sentence-card">
+      <div id="sentenceKana" class="sentence-kana"></div>
+      <div id="sentenceParts" class="sentence-parts hidden"></div>
+      <div id="sentenceRomaji" class="sentence-romaji"></div>
+      <div id="sentenceMeaning" class="sentence-meaning"></div>
+      <div id="sentenceNote" class="sentence-note"></div>
+      <button id="sListen" class="listen hidden">♪ listen</button>
+    </div>
+  </div>
+
+  <div id="sentenceActions" class="actions">
+    <button id="sReveal" class="btn btn-primary">Show answer<span class="hint">space</span></button>
+  </div>
+  <div id="sentenceGrade" class="actions hidden">
+    <button id="sMissed" class="btn btn-bad">Missed it<span class="hint">n</span></button>
+    <button id="sGot" class="btn btn-good">Got it<span class="hint">y</span></button>
+  </div>
+</section>
+
 <!-- ===== EXAM RESULT ===== -->
 <section id="examScreen" class="screen hidden">
   <header class="bar">
@@ -256,8 +289,9 @@
   </div>
 </section>
 
-<script src="data.js?v=23"></script>
-<script src="words.js?v=23"></script>
-<script src="app.js?v=23"></script>
+<script src="data.js?v=24"></script>
+<script src="words.js?v=24"></script>
+<script src="sentences.js?v=24"></script>
+<script src="app.js?v=24"></script>
 </body>
 </html>

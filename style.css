@@ -625,3 +625,69 @@ body {
 
 /* Reference cells are buttons that speak, so they need a press response. */
 #refChart .cell:active { background: var(--accent-soft); border-color: var(--accent); }
+
+/* ---------- sentences ---------- */
+.sentence-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+}
+
+.sentence-card {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 22px 16px;
+  text-align: center;
+  background: var(--card);
+  border-radius: 20px;
+}
+
+.sentence-kana {
+  font-family: var(--kana);
+  font-size: clamp(26px, 6.6vw, 38px);
+  line-height: 1.7;
+  letter-spacing: .03em;
+}
+
+/* the same characters, spaced into words once the answer shows */
+.sentence-parts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 6px 14px;
+}
+
+.part {
+  font-family: var(--kana);
+  font-size: clamp(24px, 6vw, 34px);
+  line-height: 1.5;
+}
+
+/* the particles are the grammar, so they are the thing to notice */
+.part-particle {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+
+.sentence-romaji { font-size: 17px; font-weight: 600; color: var(--accent); letter-spacing: .02em; }
+.sentence-meaning { font-size: 17px; line-height: 1.5; }
+
+.sentence-note {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--dim);
+  text-align: left;
+}
+
+.sentence-note:not(:empty) {
+  padding: 12px 14px;
+  background: var(--card-2);
+  border-radius: 12px;
+}
