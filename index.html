@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=25">
+<link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 
@@ -97,6 +97,11 @@
       <span class="menu-btn-main">List</span>
       <span class="menu-btn-sub" id="listCount">Write the chart in order</span>
     </button>
+    <button id="goCopy" class="menu-btn">
+      <span class="menu-btn-kana">あ　あ　あ</span>
+      <span class="menu-btn-main">Copy</span>
+      <span class="menu-btn-sub" id="copyCount">Trace it, then write it yourself · no score</span>
+    </button>
     <button id="goWords" class="menu-btn">
       <span class="menu-btn-kana">ねこ → neko</span>
       <span class="menu-btn-main">Words</span>
@@ -166,6 +171,35 @@
   </div>
   <div id="listDone" class="actions hidden">
     <button id="listAgain" class="btn btn-primary">Start again</button>
+  </div>
+</section>
+
+<!-- ===== COPY ===== -->
+<!-- Not a test: look at the character, trace it, then write it on your own.
+     The six writing boxes are added by app.js. -->
+<section id="copyScreen" class="screen hidden">
+  <header class="bar">
+    <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
+    <span class="bar-title">Copy</span>
+    <span id="copyPos" class="score">1 / 46</span>
+  </header>
+
+  <div class="copy-top">
+    <button id="copyModel" class="copy-model" aria-label="Hear it">
+      <span id="copyKana" class="copy-kana">あ</span>
+    </button>
+    <div class="copy-label">
+      <span id="copyRomaji" class="copy-romaji">a</span>
+      <span id="copyHear" class="copy-hear">· tap to hear</span>
+    </div>
+  </div>
+
+  <div id="copyBoxes" class="copy-boxes"></div>
+
+  <div class="actions">
+    <button id="copyPrev" class="btn">‹ Back<span class="hint">←</span></button>
+    <button id="copyClear" class="btn">Clear<span class="hint">c</span></button>
+    <button id="copyNext" class="btn btn-primary"><span id="copyNextLabel">Next ›</span><span class="hint">→</span></button>
   </div>
 </section>
 
@@ -293,9 +327,9 @@
   </div>
 </section>
 
-<script src="data.js?v=25"></script>
-<script src="words.js?v=25"></script>
-<script src="sentences.js?v=25"></script>
-<script src="app.js?v=25"></script>
+<script src="data.js?v=26"></script>
+<script src="words.js?v=26"></script>
+<script src="sentences.js?v=26"></script>
+<script src="app.js?v=26"></script>
 </body>
 </html>

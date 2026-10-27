@@ -10,6 +10,20 @@
   --good: #3fbf7f;
   --bad: #f0645f;
   --kana: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
+  /* Handwriting shapes, for copying from. See the @font-face below. */
+  --hand: "Klee Kana", "UD Digi Kyokasho N-R", "YuKyokasho", var(--kana);
+}
+
+/* Klee One is a "textbook" font: the characters are shaped the way a hand
+   writes them, not the way a screen prints them. In the usual screen font the
+   bottom of き and of さ joins up into one line; written by hand it is two
+   strokes, and that is what you want to copy. This file holds only the kana -
+   the full font is 9 MB, this is 25 KB - and it is only downloaded the first
+   time Copy is opened. Free to use, licence in fonts/OFL.txt. */
+@font-face {
+  font-family: "Klee Kana";
+  src: url("fonts/klee-kana.woff2") format("woff2");
+  font-display: swap;
 }
 
 @media (prefers-color-scheme: light) {
@@ -465,10 +479,27 @@ body {
 .choice .alt { font-size: .68em; font-weight: 600; opacity: .65; margin-left: .35em; }
 .prompt .alt { font-size: .55em; opacity: .6; margin-left: .3em; }
 
-/* Three sets on the opening screen, so let it scroll on a short phone. */
-.menu-choices { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+/* Three sets on the opening screen, so let it scroll on a short phone.
+
+   The buttons are centred with auto margins rather than justify-content:
+   centre. With centre, a list taller than the screen spills out of the top as
+   well as the bottom, and the top part cannot be scrolled back to - the first
+   button was cut in half on a phone. Auto margins centre it when there is room
+   and fall to zero when there is not. */
+.menu-choices { overflow-y: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; }
+.menu-choices > :first-child { margin-top: auto; }
+.menu-choices > :last-child { margin-bottom: auto; }
 #homeScreen .menu-btn { padding: 20px 18px; }
 #homeScreen .menu-choices { gap: 12px; }
+
+/* Five practice modes is more than a phone fits at full size. Slimmer buttons
+   get four on screen with the fifth peeking in at the bottom, which is the
+   clue that the list scrolls. */
+#menuScreen .menu-choices { gap: 10px; }
+#menuScreen .menu-btn { padding: 14px 18px; border-radius: 16px; }
+#menuScreen .menu-btn-kana { font-size: 14px; margin-bottom: 5px; }
+#menuScreen .menu-btn-main { font-size: 22px; }
+#menuScreen .menu-btn-sub { font-size: 13px; margin-top: 2px; }
 
 /* ---------- words ---------- */
 .seg-wrap-tight { margin-bottom: 10px; }
@@ -717,3 +748,103 @@ body {
 
 /* particles do not translate, so their label is a job description */
 .part-gloss-particle { color: var(--accent); opacity: .85; }
+
+/* ---------- copy ---------- */
+/* Every box carries the dashed cross a Japanese exercise book has, so you can
+   see where each stroke sits against the middle - and the big model has the
+   same cross, so what you see there maps straight onto what you write. */
+.copy-model, .copy-box {
+  background-color: var(--card);
+  background-image:
+    repeating-linear-gradient(to bottom, var(--line) 0 6px, transparent 6px 12px),
+    repeating-linear-gradient(to right, var(--line) 0 6px, transparent 6px 12px);
+  background-size: 1px 100%, 100% 1px;
+  background-position: center, center;
+  background-repeat: no-repeat;
+  border: 1px solid var(--line);
+}
+
+.copy-top {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* A square that takes whatever height is left, up to a point. */
+.copy-model {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 300px;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  border-radius: 20px;
+  touch-action: manipulation;
+}
+
+.copy-model:active { border-color: var(--accent); }
+
+/* The font size of the model and of the traces is set by app.js to match the
+   box, so all of them are the same shape at the same scale. */
+.copy-kana, .copy-trace {
+  font-family: var(--hand);
+  font-weight: normal;
+  line-height: 1;
+  /* Klee's kana sit 0.09 of their height below the middle of the line, so
+     without this they hang low in their squares. Measured from the font file;
+     its Mac and Windows measurements agree, so it is the same everywhere. */
+  transform: translateY(-0.09em);
+}
+
+.copy-kana { display: block; }
+
+.copy-label { flex: 0 0 auto; font-size: 15px; color: var(--dim); }
+.copy-romaji { font-size: 22px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
+
+.copy-boxes {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding-top: 12px;
+}
+
+.copy-cap {
+  grid-column: 1 / -1;
+  margin: 2px 2px -4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--dim);
+}
+
+.copy-box {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.copy-box canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+
+/* The faint character to trace over. Its strength is set per box by app.js. */
+.copy-trace {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dim);
+  pointer-events: none;
+}
+
+.btn:disabled { opacity: .45; }

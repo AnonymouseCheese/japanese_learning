@@ -9,7 +9,7 @@
   var current = SETS[0];
 
   var state = {
-    screen: 'home',            // home | menu | read | write | picker | words | reference
+    screen: 'home',            // home | menu | read | write | copy | picker | words | reference
     chartFrom: 'read',         // which drill the reference chart was opened from
     combo: ['hiragana', 'dakuten', 'katakana'],   // ticked in the combination set
     wordRomaji: false,         // show the reading before you have answered?
@@ -211,6 +211,7 @@
     menu: $('menuScreen'),
     read: $('readScreen'),
     write: $('writeScreen'),
+    copy: $('copyScreen'),
     picker: $('pickerScreen'),
     words: $('wordsScreen'),
     sentence: $('sentenceScreen'),
@@ -331,6 +332,7 @@
     $('goRead').disabled = on === 0;
     $('goWrite').disabled = on === 0;
     $('goList').disabled = on === 0;
+    $('goCopy').disabled = on === 0;
     $('goExam').disabled = on === 0;
 
     $('chartLinkLabel').textContent = soundOn()
@@ -343,6 +345,9 @@
       : 'nothing switched on';
     $('listCount').textContent = on
       ? 'Write all ' + on + ' in chart order'
+      : 'nothing switched on';
+    $('copyCount').textContent = on
+      ? 'Trace and copy all ' + on + ' · no score'
       : 'nothing switched on';
 
     var weak = Object.keys(state.stats)
@@ -388,6 +393,7 @@
   $('goRead').addEventListener('click', function () { startPractice('read'); });
   $('goWrite').addEventListener('click', function () { startWrite('random'); });
   $('goList').addEventListener('click', function () { startWrite('list'); });
+  $('goCopy').addEventListener('click', startCopy);
   $('goPicker').addEventListener('click', function () { drawChart(); show('picker'); });
 
   // ---------- identify ----------
@@ -609,6 +615,150 @@
   $('btnReveal').addEventListener('click', reveal);
   $('btnGot').addEventListener('click', function () { gradeWrite(true); });
   $('btnMissed').addEventListener('click', function () { gradeWrite(false); });
+
+  // ---------- copy ----------
+  // Not a test - the way a first exercise book does it. The character is shown
+  // large, then there are six boxes to write it in. The first three have it
+  // printed faintly to trace over, fainter each time; the last three are empty,
+  // to write it on your own. Nothing is scored and nothing is saved. It walks
+  // the chart in order, like List, and follows the same selection.
+  var COPY_TRACE = [0.85, 0.5, 0.25, 0, 0, 0];   // how strongly each box shows the character
+  var copyPads = [];
+  var copyIndex = 0;
+
+  function copyCaption(text) {
+    var cap = document.createElement('div');
+    cap.className = 'copy-cap';
+    cap.textContent = text;
+    $('copyBoxes').appendChild(cap);
+  }
+
+  // One small drawing pad. The same idea as the big Write pad, but there are
+  // six of these, so each one keeps its own canvas and its own pen.
+  function makeCopyPad(strength) {
+    var box = document.createElement('div');
+    box.className = 'copy-box';
+    var trace = document.createElement('div');
+    trace.className = 'copy-trace';
+    trace.style.opacity = strength;
+    var canvas = document.createElement('canvas');
+    box.appendChild(trace);
+    box.appendChild(canvas);
+    $('copyBoxes').appendChild(box);
+
+    var p = { box: box, trace: trace, canvas: canvas, ctx: canvas.getContext('2d'), scale: 1, drawing: false };
+
+    function at(e) {
+      var r = canvas.getBoundingClientRect();
+      return { x: (e.clientX - r.left) * p.scale, y: (e.clientY - r.top) * p.scale };
+    }
+
+    canvas.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      p.drawing = true;
+      if (canvas.setPointerCapture) { try { canvas.setPointerCapture(e.pointerId); } catch (err) {} }
+      var pt = at(e);
+      p.ctx.beginPath();
+      p.ctx.moveTo(pt.x, pt.y);
+      p.ctx.lineTo(pt.x + 0.1, pt.y + 0.1);      // a plain tap still leaves a dot
+      p.ctx.stroke();
+    });
+
+    canvas.addEventListener('pointermove', function (e) {
+      if (!p.drawing) return;
+      e.preventDefault();
+      var pt = at(e);
+      p.ctx.lineTo(pt.x, pt.y);
+      p.ctx.stroke();
+    });
+
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (evt) {
+      canvas.addEventListener(evt, function () { p.drawing = false; });
+    });
+
+    return p;
+  }
+
+  copyCaption('Trace over it');
+  COPY_TRACE.forEach(function (strength, i) {
+    if (i === 3) copyCaption('Now on your own');
+    copyPads.push(makeCopyPad(strength));
+  });
+
+  function clearCopyPad(p) {
+    var w = p.canvas.width;
+    p.ctx.clearRect(0, 0, w, p.canvas.height);
+    p.ctx.strokeStyle = cssVar('--ink', '#fff');
+    p.ctx.lineWidth = Math.max(4 * p.scale, w * 0.05);   // in step with the box size
+    p.ctx.lineCap = 'round';
+    p.ctx.lineJoin = 'round';
+  }
+
+  function clearCopy() { copyPads.forEach(clearCopyPad); }
+
+  // The boxes only have a size once the screen is showing. The characters are
+  // sized to the same share of their box everywhere, model included, so the
+  // trace you write over is exactly the shape you were just looking at.
+  function sizeCopy() {
+    var model = $('copyModel').getBoundingClientRect();
+    if (model.width) $('copyKana').style.fontSize = Math.round(model.width * 0.78) + 'px';
+
+    copyPads.forEach(function (p) {
+      var r = p.box.getBoundingClientRect();
+      if (!r.width) return;
+      p.scale = window.devicePixelRatio || 1;
+      p.canvas.width = Math.round(r.width * p.scale);
+      p.canvas.height = Math.round(r.height * p.scale);
+      p.trace.style.fontSize = Math.round(r.width * 0.78) + 'px';
+    });
+    clearCopy();
+  }
+
+  function startCopy() {
+    if (!pool().length) return;
+    copyIndex = 0;
+    show('copy');
+    presentCopy();
+    requestAnimationFrame(sizeCopy);
+  }
+
+  function presentCopy() {
+    var seq = pool();
+    if (!seq.length) { toMenu(); return; }
+    if (copyIndex >= seq.length) copyIndex = 0;
+    var item = seq[copyIndex];
+    state.current = item;
+
+    $('copyKana').textContent = item.kana;
+    $('copyRomaji').textContent = labelText(item);
+    $('copyHear').classList.toggle('hidden', !soundOn());
+    $('copyPos').textContent = (copyIndex + 1) + ' / ' + seq.length;
+    $('copyPrev').disabled = copyIndex === 0;
+    $('copyNextLabel').textContent = copyIndex === seq.length - 1 ? 'Start again' : 'Next ›';
+    copyPads.forEach(function (p) { p.trace.textContent = item.kana; });
+    clearCopy();
+  }
+
+  // Past the last character it goes back round to the first.
+  function nextCopy() {
+    copyIndex = copyIndex + 1 < pool().length ? copyIndex + 1 : 0;
+    presentCopy();
+  }
+
+  function prevCopy() {
+    if (copyIndex === 0) return;
+    copyIndex--;
+    presentCopy();
+  }
+
+  // Same as tapping a character on the chart - nothing here is being tested,
+  // so hearing it gives nothing away.
+  $('copyModel').addEventListener('click', function () {
+    if (state.current) say(state.current.kana);
+  });
+  $('copyNext').addEventListener('click', nextCopy);
+  $('copyPrev').addEventListener('click', prevCopy);
+  $('copyClear').addEventListener('click', clearCopy);
 
   // ---------- character picker ----------
   var chart = $('chart');
@@ -1451,6 +1601,13 @@
       else if (revealed && (e.key === 'n' || e.key === 'ArrowLeft')) { e.preventDefault(); gradeSentence(false); }
       return;
     }
+    if (state.screen === 'copy') {
+      if (e.key === 'Escape') { toMenu(); return; }
+      if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nextCopy(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); prevCopy(); }
+      else if (e.key === 'c') { e.preventDefault(); clearCopy(); }
+      return;
+    }
     if (state.screen === 'words') {
       if (e.key === 'Escape') { toMenu(); return; }
       var shown = !$('wordGrade').classList.contains('hidden');
@@ -1488,10 +1645,14 @@
   // ---------- go ----------
   window.addEventListener('resize', function () {
     if (state.screen === 'write') sizePad();
+    if (state.screen === 'copy') sizeCopy();
   });
 
   window.addEventListener('orientationchange', function () {
-    setTimeout(function () { if (state.screen === 'write') sizePad(); }, 250);
+    setTimeout(function () {
+      if (state.screen === 'write') sizePad();
+      if (state.screen === 'copy') sizeCopy();
+    }, 250);
   });
 
   load();

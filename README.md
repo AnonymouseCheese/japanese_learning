@@ -16,8 +16,8 @@ The app opens on a **set chooser**:
 - **Combination** — several sets mixed together.
 - **Sentences** — whole sentences, and the particles that hold them together.
 
-Each one opens the same menu of four practice modes — **Identify**, **Write**,
-**List** and **Words** — plus an **Exam**.
+Each one opens the same menu of five practice modes — **Identify**, **Write**,
+**List**, **Copy** and **Words** — plus an **Exam**.
 
 ## Combination
 
@@ -113,12 +113,14 @@ and the session is opened on your first touch anywhere in the app, because the
 very first speak of a page's life is often dropped outright — which is what makes
 a listen button seem to need two taps.
 
-It is deliberately limited to two places:
+It is deliberately limited to three places:
 
 - **Words**, when the answer is revealed — never before, or it would be the
   answer.
 - **The chart**, where tapping any character says it. Reachable from the menu as
   well as mid-drill.
+- **Copy**, where tapping the big character says it. Nothing there is being
+  tested, so the sound gives nothing away — the same reasoning as the chart.
 
 Not in Identify, Write or List. In Identify the sound *is* the answer. In Write
 and List it would be tempting, but single isolated kana are where synthesised
@@ -183,6 +185,42 @@ Every other character just shows its romaji.
   after き is a different skill from recognising く on its own. It follows your
   selection, so with only the か row switched on it walks か き く け こ and
   finishes.
+- **Copy** — not a test at all; the way a first exercise book works. See below.
+
+## Copy
+
+The character is shown large, with its sound underneath — tap it to hear it.
+Below are six boxes to write it in with your finger:
+
+```
+Trace over it        あ  あ  あ      printed faintly, fainter each time
+Now on your own      □   □   □      empty
+```
+
+Every box, and the big one, has the dashed cross through the middle that a
+Japanese exercise book has, so you can see where each stroke sits. **Next**
+clears the boxes and moves on, **Back** goes to the one before, **Clear** wipes
+them to go again. Nothing is marked, scored or saved.
+
+It walks the chart in order, like List, and follows the character picker — so
+with only the か row switched on it is just か き く け こ, as many times as you
+like. After the last one, Next goes back round to the first.
+
+### The handwriting font
+
+Copy shows the characters in **Klee One**, a "textbook" font, rather than the
+font used everywhere else in the app. The usual screen font is drawn for
+reading, and some characters come out differently from how a hand writes them:
+the bottom of き and of さ joins up into one line, where by hand it is two
+separate strokes. Klee is drawn the way a pen makes them, which is what you
+want to be copying.
+
+It is only the kana — the full font is 9 MB, the file in `fonts/` is 25 KB —
+and the browser only downloads it the first time Copy is opened. Klee One is
+free to use and share under the SIL Open Font License; the licence is in
+`fonts/OFL.txt`.
+
+On a desktop: `→` or `space` for next, `←` for back, `c` to clear.
 
 ## Exam
 
@@ -356,3 +394,4 @@ fresh download. Then pull down to refresh on the phone.
 | `words.js` | The word list for reading practice — kana, reading, meaning. |
 | `sentences.js` | The sentences, split into words, with a note on each particle. |
 | `app.js` | The logic — screens, choosing characters, scoring, the drawing pad. |
+| `fonts/` | The handwriting font Copy uses, cut down to just the kana, and its licence. |
