@@ -189,32 +189,46 @@ Every other character just shows its romaji.
 
 ## Copy
 
-The character is shown at the top with its sound — tap it to hear it. Below is
-one big box, and you write the character in it six times:
+There is one big box to write in, and a switch for what goes in it:
+
+- **Whole row** (the default) — a row of the chart, written as a line. か, tap
+  **Done**, き, **Done**, and so on to こ; then the line again.
+- **One at a time** — a single character, six times over. Better for a
+  character that is brand new.
+
+Either way it is six goes:
 
 ```
-go 1  2  3     あ printed faintly in the box, fainter each time - trace over it
+go 1  2  3     printed faintly in the box, fainter each time - trace over it
 go 4  5  6     the box is empty - write it on your own
 ```
 
-Write it, tap **Done**, and the box clears for the next go. Each go you finish
-is kept in a row of six small boxes above the big one, so you can compare as
-you go; tap a small box to go back and redo that one. After the sixth, all six
-are laid out together like a finished page, with **Again** to do them over or
-**Next character** to move on. **Clear** wipes the go you are on. Nothing is
-marked, scored or saved.
+The character you are on is shown at the top with its sound — tap it to hear
+it. Above the big box is a strip of small boxes keeping what you have written:
+for a row, the five characters of the line you are on (each always shown
+faintly, so you can see what the line is even when you are on your own); for
+one character, its six goes. Tap a small box to go back and redo it.
+
+At the end everything is laid out together like a finished exercise-book page
+— for a row, five across and six lines down. **Again** does it over, **Next
+row** moves on. **Clear** wipes whatever is in the big box. Nothing is marked,
+scored or saved.
 
 Every box has the dashed cross through the middle that a Japanese exercise book
 has, so you can see where each stroke sits — the model at the top too, so what
 you see there maps straight onto what you write.
 
-It walks the chart in order, like List, and follows the character picker — so
-with only the か row switched on it is just か き く け こ, as many times as you
-like. **‹ prev** and **next ›** in the top bar skip between characters at any
-point. After the last one it goes back round to the first.
+It walks the chart in order and follows the character picker. Rows come from
+the chart, so や ゆ よ is a line of three and わ を a line of two; ん on its own
+works like one at a time. If you switch on six characters or fewer in the
+picker — ぬ め ね れ わ, say — they make a single line wherever they sit on the
+chart. **‹ prev** and **next ›** in the top bar skip to another row or
+character at any point, and after the last one it goes back round to the first.
+Switching between the two keeps your place, and the app remembers which you
+used.
 
 The first version had six small boxes on screen at once. They were too small to
-write in comfortably, which is why it is now one big box six times.
+write in comfortably, which is why it is now one big box used over and over.
 
 ### Safari going back a page
 
@@ -244,7 +258,7 @@ and the browser only downloads it the first time Copy is opened. Klee One is
 free to use and share under the SIL Open Font License; the licence is in
 `fonts/OFL.txt`.
 
-On a desktop: `space` for Done, `→` and `←` to skip between characters, `c` to
+On a desktop: `space` for Done, `→` and `←` to skip between rows or characters, `c` to
 clear.
 
 ## Exam

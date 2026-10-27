@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=27">
+<link rel="stylesheet" href="style.css?v=28">
 </head>
 <body>
 
@@ -176,8 +176,9 @@
 
 <!-- ===== COPY ===== -->
 <!-- Not a test: look at the character, then write it six times in one big
-     box - three over a faint copy, three on your own. The six small boxes
-     are added by app.js. -->
+     box - three over a faint copy, three on your own. Either one character
+     at a time, or a whole row of the chart as a line. The small boxes are
+     added by app.js. -->
 <section id="copyScreen" class="screen hidden">
   <header class="bar">
     <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
@@ -194,9 +195,12 @@
       <span id="copyKana" class="copy-kana">あ</span>
     </button>
     <div class="copy-info">
-      <div id="copyRomaji" class="copy-romaji">a</div>
-      <div id="copyHear" class="copy-hear">tap it to hear it</div>
-      <div id="copyStep" class="copy-step">Trace over it · 1 of 6</div>
+      <div><span id="copyRomaji" class="copy-romaji">a</span><span id="copyHear" class="copy-hear">· tap to hear</span></div>
+      <div id="copyStep" class="copy-step">Trace it · 1 of 6</div>
+      <div class="seg copy-mode">
+        <button id="copyOne" class="seg-btn">One at a time</button>
+        <button id="copyRow" class="seg-btn">Whole row</button>
+      </div>
     </div>
   </div>
 
@@ -340,9 +344,9 @@
   </div>
 </section>
 
-<script src="data.js?v=27"></script>
-<script src="words.js?v=27"></script>
-<script src="sentences.js?v=27"></script>
-<script src="app.js?v=27"></script>
+<script src="data.js?v=28"></script>
+<script src="words.js?v=28"></script>
+<script src="sentences.js?v=28"></script>
+<script src="app.js?v=28"></script>
 </body>
 </html>

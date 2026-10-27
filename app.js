@@ -16,6 +16,7 @@
     volume: 'mid',             // off | low | mid | high - one setting for all audio
     difficulty: 'easy',        // easy | medium | hard - where wrong answers come from
     writeOrder: 'random',      // random | list - how Write picks the next character
+    copyRow: true,             // Copy a whole row at a time, rather than one character
     exam: null,                // the exam in progress, or null
     examSeen: {},              // what this round of exams has already covered
     listIndex: 0,              // position through the chart when running in order
@@ -41,6 +42,7 @@
       if (typeof saved.wordRomaji === 'boolean') state.wordRomaji = saved.wordRomaji;
       state.examSeen = saved.examSeen || {};
       if (saved.volume) state.volume = saved.volume;
+      if (typeof saved.copyRow === 'boolean') state.copyRow = saved.copyRow;
       return;
     }
 
@@ -62,7 +64,7 @@
       localStorage.setItem(STORE, JSON.stringify({
         off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id,
         combo: state.combo, wordRomaji: state.wordRomaji, examSeen: state.examSeen,
-        volume: state.volume
+        volume: state.volume, copyRow: state.copyRow
       }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
@@ -629,50 +631,128 @@
   $('btnMissed').addEventListener('click', function () { gradeWrite(false); });
 
   // ---------- copy ----------
-  // Not a test - the way a first exercise book works. The character is shown,
-  // and you write it six times in one big box: three times over a faint copy
-  // that fades each time, then three times on your own. Each go is kept in the
-  // row of small boxes, and after the sixth all six are laid out together.
-  // Nothing is scored or saved. It walks the chart in order, like List, and
-  // follows the same selection.
+  // Not a test - the way a first exercise book works. Two ways to use it:
+  //
+  //   whole row     - a row of the chart, か き く け こ, written as a line in the
+  //                   big box one character after another, and the line six times
+  //   one at a time - a single character, written six times
+  //
+  // Either way the first three goes are over a faint copy that fades each
+  // time, and the last three are on your own. What you write is kept in the
+  // small boxes, and at the end it is all laid out together like a finished
+  // page. Nothing is scored or saved. It follows the character picker, so
+  // anything switched off there is left out here too.
   var COPY_TRACE = [0.85, 0.5, 0.25, 0, 0, 0];   // how strongly each go shows the character
   var COPY_GOES = COPY_TRACE.length;
 
-  // Each go is kept as the strokes you drew rather than as a picture, with
-  // every point stored as a fraction of the box. So the same writing can be
-  // drawn into the big box, a small one or the review at the end, and stays
-  // sharp at every size - and turning the phone does not wipe it.
+  // What you write is kept as strokes rather than as a picture, with every
+  // point stored as a fraction of the box. So the same writing can be drawn
+  // into the big box, a small one or the page at the end, and stays sharp at
+  // every size - and turning the phone does not wipe it.
   var copy = {
-    index: 0,          // which character, counting through pool()
-    go: 0,             // which of the six goes is in the big box
-    review: false,     // true while all six are laid out together
-    goes: [],          // goes[n] is a list of strokes; a stroke is a list of [x, y]
-    stroke: null       // the stroke being drawn right now
+    index: 0,          // which row, or which character, counting through copyUnits()
+    unit: [],          // the characters being copied: a row of them, or just one
+    go: 0,             // which of the six goes
+    col: 0,            // which character of the row
+    review: false,     // true while the finished page is showing
+    ink: [],           // ink[go][col] is a list of strokes; a stroke is a list of [x, y]
+    stroke: null,      // the stroke being drawn right now
+    thumbs: [],        // the small boxes above the big one
+    cells: []          // the boxes on the finished page
   };
 
   var copyCanvas = $('copyCanvas');
-  var copyThumbs = [];   // the row of six small boxes
-  var copyCells = [];    // the same six, laid out large at the end
+
+  // What there is to copy, in chart order: each row of the chart with the
+  // characters that are switched on, or each character on its own. The rows
+  // are read from the chart itself, so a row is exactly what the picker shows.
+  //
+  // A handful picked by hand - ぬ め ね れ わ, say - make one line wherever they
+  // sit on the chart, rather than being split up by row. Six is as many as the
+  // small boxes hold.
+  var COPY_LINE_MAX = 6;
+
+  function copyUnits() {
+    var on = pool();
+    if (!state.copyRow) return on.map(function (k) { return [k]; });
+    if (on.length <= COPY_LINE_MAX) return on.length ? [on] : [];
+    var units = [];
+    current.chart.forEach(function (row) {
+      var chars = row.cells
+        .filter(function (c) { return c && !state.off[c[0]]; })
+        .map(function (c) { return byKana(c[0]); });
+      if (chars.length) units.push(chars);
+    });
+    return units;
+  }
+
+  // A row of one - ん on its own - works exactly like one at a time.
+  function wholeRow() { return copy.unit.length > 1; }
+
+  function emptyInk() {
+    return COPY_TRACE.map(function () {
+      return copy.unit.map(function () { return []; });
+    });
+  }
+
+  // Which go and which character a small box stands for. For a row, the small
+  // boxes are the characters of the line you are on; for one character, they
+  // are its six goes.
+  function thumbPos(i) {
+    return wholeRow() ? { go: copy.go, col: i } : { go: i, col: 0 };
+  }
 
   // A small box: the faint character behind, your writing on top. Tapping one
-  // takes you back to that go to do it again.
-  function copyMini(parent, cls, n) {
+  // takes you to it, to write it again.
+  function copyMini(parent, cls, kana, onTap) {
     var b = document.createElement('button');
     b.className = cls;
     var trace = document.createElement('div');
     trace.className = 'copy-trace';
-    trace.style.opacity = COPY_TRACE[n];
+    trace.textContent = kana;
     var canvas = document.createElement('canvas');
     b.appendChild(trace);
     b.appendChild(canvas);
-    b.addEventListener('click', function () { showGo(n); });
+    b.addEventListener('click', onTap);
     parent.appendChild(b);
     return { el: b, trace: trace, canvas: canvas };
   }
 
-  for (var g = 0; g < COPY_GOES; g++) {
-    copyThumbs.push(copyMini($('copyThumbs'), 'copy-thumb', g));
-    copyCells.push(copyMini($('copyReview'), 'copy-cell', g));
+  function buildThumbs() {
+    var box = $('copyThumbs');
+    box.innerHTML = '';
+    copy.thumbs = [];
+    var count = wholeRow() ? copy.unit.length : COPY_GOES;
+    for (var i = 0; i < count; i++) {
+      copy.thumbs.push(makeThumb(box, i));
+    }
+  }
+
+  function makeThumb(box, i) {
+    return copyMini(box, 'copy-thumb', copy.unit[thumbPos(i).col].kana, function () {
+      var p = thumbPos(i);
+      showGo(p.go, p.col);
+    });
+  }
+
+  // The finished page: one line per go for a row, or the six goes in a block
+  // of three by two for a single character.
+  function reviewCols() { return wholeRow() ? copy.unit.length : 3; }
+
+  function buildCells() {
+    var box = $('copyReview');
+    box.innerHTML = '';
+    box.style.gridTemplateColumns = 'repeat(' + reviewCols() + ', 1fr)';
+    copy.cells = [];
+    COPY_TRACE.forEach(function (strength, go) {
+      copy.unit.forEach(function (item, col) {
+        var cell = copyMini(box, 'copy-cell', item.kana, function () { showGo(go, col); });
+        cell.trace.style.opacity = strength;
+        cell.go = go;
+        cell.col = col;
+        copy.cells.push(cell);
+      });
+    });
   }
 
   // Draw a list of strokes into a canvas of any size.
@@ -711,9 +791,10 @@
     if (w) m.trace.style.fontSize = Math.round(w * 0.78) + 'px';
   }
 
-  // The big box is the largest square that fits the space left over. Done in
-  // code rather than CSS because Safari is unreliable at sizing a square that
-  // has to fit both ways.
+  // The big box is the largest square that fits the space left over, and the
+  // finished page is as big as it can be while still fitting. Done in code
+  // rather than CSS because Safari is unreliable at sizing boxes that have to
+  // fit both ways.
   function sizeCopy() {
     var model = $('copyModel').getBoundingClientRect();
     if (model.width) $('copyKana').style.fontSize = Math.round(model.width * 0.78) + 'px';
@@ -721,31 +802,42 @@
     var stage = $('copyStage').getBoundingClientRect();
     if (!stage.width) return;
     if (copy.review) {
-      // three across and two down, so it can be half as wide again as it is tall
-      $('copyReview').style.width = Math.floor(Math.min(stage.width, stage.height * 1.5)) + 'px';
-      copyCells.forEach(fitMini);
+      var cols = reviewCols(), rows = copy.cells.length / cols;
+      var gap = wholeRow() ? 6 : 10;
+      var cell = Math.min((stage.width - gap * (cols - 1)) / cols,
+                          (stage.height - gap * (rows - 1)) / rows);
+      $('copyReview').style.gap = gap + 'px';
+      $('copyReview').style.width = Math.floor(cell * cols + gap * (cols - 1)) + 'px';
+      copy.cells.forEach(fitMini);
     } else {
       var side = Math.floor(Math.min(stage.width, stage.height));
       $('copyPad').style.width = side + 'px';
       $('copyPad').style.height = side + 'px';
       $('copyTrace').style.fontSize = Math.round(side * 0.78) + 'px';
       fitCanvas(copyCanvas);
-      copyThumbs.forEach(fitMini);
+      copy.thumbs.forEach(fitMini);
     }
     repaintCopy();
   }
 
-  function repaintCopy() {
-    if (copy.review) {
-      copyCells.forEach(function (c, n) { paint(c.canvas, copy.goes[n]); });
-      return;
-    }
-    paint(copyCanvas, copy.goes[copy.go]);
-    copyThumbs.forEach(function (t, n) { paint(t.canvas, copy.goes[n]); });
+  function refreshThumbs() {
+    copy.thumbs.forEach(function (t, i) {
+      var p = thumbPos(i);
+      // For a row the small boxes always show their character faintly, so even
+      // on your own you can see what the line is.
+      t.trace.style.opacity = wholeRow() ? Math.max(COPY_TRACE[p.go], 0.2) : COPY_TRACE[p.go];
+      t.el.classList.toggle('now', p.go === copy.go && p.col === copy.col);
+      paint(t.canvas, copy.ink[p.go][p.col]);
+    });
   }
 
-  function emptyGoes() {
-    return COPY_TRACE.map(function () { return []; });
+  function repaintCopy() {
+    if (copy.review) {
+      copy.cells.forEach(function (c) { paint(c.canvas, copy.ink[c.go][c.col]); });
+      return;
+    }
+    paint(copyCanvas, copy.ink[copy.go][copy.col]);
+    refreshThumbs();
   }
 
   function startCopy() {
@@ -753,86 +845,121 @@
     copy.index = 0;
     show('copy');
     presentCopy();
+  }
+
+  // Load the next row, or character, with everything empty.
+  function presentCopy() {
+    var units = copyUnits();
+    if (!units.length) { toMenu(); return; }
+    if (copy.index >= units.length) copy.index = 0;
+    copy.unit = units[copy.index];
+    copy.ink = emptyInk();
+    copy.review = false;
+
+    $('copyHear').classList.toggle('hidden', !soundOn());
+    $('copyPos').textContent = (copy.index + 1) + ' / ' + units.length;
+    $('copyPrev').disabled = copy.index === 0;
+    buildThumbs();
+    buildCells();
+    showGo(0, 0);
     sizeCopy();
   }
 
-  function presentCopy() {
-    var seq = pool();
-    if (!seq.length) { toMenu(); return; }
-    if (copy.index >= seq.length) copy.index = 0;
-    var item = seq[copy.index];
-    state.current = item;
-    copy.goes = emptyGoes();
-
-    $('copyKana').textContent = item.kana;
-    $('copyRomaji').textContent = labelText(item);
-    $('copyHear').classList.toggle('hidden', !soundOn());
-    $('copyPos').textContent = (copy.index + 1) + ' / ' + seq.length;
-    $('copyPrev').disabled = copy.index === 0;
-    $('copyTrace').textContent = item.kana;
-    copyThumbs.concat(copyCells).forEach(function (m) { m.trace.textContent = item.kana; });
-    showGo(0);
+  function isLastGo() {
+    return copy.go === COPY_GOES - 1 && copy.col === copy.unit.length - 1;
   }
 
-  // Put one of the six goes in the big box.
-  function showGo(n) {
+  // Put one character, on one go, in the big box.
+  function showGo(go, col) {
     var fromReview = copy.review;
-    copy.go = n;
+    var item = copy.unit[col];
+    copy.go = go;
+    copy.col = col;
     copy.review = false;
+    state.current = item;
+
     $('copyPad').classList.remove('hidden');
     $('copyThumbs').classList.remove('hidden');
     $('copyReview').classList.add('hidden');
 
-    $('copyTrace').style.opacity = COPY_TRACE[n];
-    $('copyStep').textContent = (COPY_TRACE[n] ? 'Trace over it' : 'Now on your own') +
-      ' · ' + (n + 1) + ' of ' + COPY_GOES;
-    copyThumbs.forEach(function (t, i) { t.el.classList.toggle('now', i === n); });
+    $('copyKana').textContent = item.kana;
+    $('copyRomaji').textContent = labelText(item);
+    $('copyTrace').textContent = item.kana;
+    $('copyTrace').style.opacity = COPY_TRACE[go];
+    $('copyStep').textContent = (COPY_TRACE[go] ? 'Trace it' : 'On your own') + ' · ' +
+      (wholeRow() ? 'line ' : '') + (go + 1) + ' of ' + COPY_GOES;
     $('copyLeftLabel').textContent = 'Clear';
-    $('copyRightLabel').textContent = n < COPY_GOES - 1 ? 'Done ›' : 'See all six ›';
+    $('copyRightLabel').textContent = isLastGo() ? 'See the page ›' : 'Done ›';
 
-    if (fromReview) { sizeCopy(); } else { paint(copyCanvas, copy.goes[n]); }
+    if (fromReview) { sizeCopy(); } else { repaintCopy(); }
   }
 
-  // All six together, like a finished page.
+  // Everything you wrote, laid out together like a finished page.
   function showReview() {
     copy.review = true;
     $('copyPad').classList.add('hidden');
     $('copyThumbs').classList.add('hidden');
     $('copyReview').classList.remove('hidden');
-    $('copyStep').textContent = 'All six done';
+    $('copyStep').textContent = 'All done';
     $('copyLeftLabel').textContent = 'Again';
-    $('copyRightLabel').textContent = copy.index + 1 < pool().length ? 'Next character ›' : 'Back to the start';
+    var more = copy.index + 1 < copyUnits().length;
+    $('copyRightLabel').textContent = !more ? 'Back to the start'
+      : state.copyRow ? 'Next row ›' : 'Next character ›';
     sizeCopy();
   }
 
-  // The big button: on to the next go, then the page of all six, then the
-  // next character.
+  // The big button: on along the line, then to the next go, then the finished
+  // page, then on to the next row or character.
   function copyRight() {
     if (copy.review) { nextCopy(); return; }
-    if (copy.go < COPY_GOES - 1) { showGo(copy.go + 1); } else { showReview(); }
+    if (isLastGo()) { showReview(); return; }
+    if (copy.col < copy.unit.length - 1) {
+      showGo(copy.go, copy.col + 1);
+    } else {
+      showGo(copy.go + 1, 0);
+    }
   }
 
-  // Clear the go in the big box - or, on the page of all six, start them again.
+  // Clear what is in the big box - or, on the finished page, start again.
   function copyLeft() {
     if (copy.review) {
-      copy.goes = emptyGoes();
-      showGo(0);
+      copy.ink = emptyInk();
+      showGo(0, 0);
       return;
     }
-    copy.goes[copy.go] = [];
-    paint(copyCanvas, []);
-    paint(copyThumbs[copy.go].canvas, []);
+    copy.ink[copy.go][copy.col] = [];
+    repaintCopy();
   }
 
-  // Past the last character it goes back round to the first.
+  // Past the last one it goes back round to the first.
   function nextCopy() {
-    copy.index = copy.index + 1 < pool().length ? copy.index + 1 : 0;
+    copy.index = copy.index + 1 < copyUnits().length ? copy.index + 1 : 0;
     presentCopy();
   }
 
   function prevCopy() {
     if (copy.index === 0) return;
     copy.index--;
+    presentCopy();
+  }
+
+  function setCopyRow(on) {
+    state.copyRow = on;
+    $('copyOne').classList.toggle('on', !on);
+    $('copyRow').classList.toggle('on', on);
+    save();
+  }
+
+  // Switching keeps your place: you land on the row holding the character you
+  // were on, or on that character by itself.
+  function switchCopy(on) {
+    if (on === state.copyRow) return;
+    var kana = state.current ? state.current.kana : null;
+    setCopyRow(on);
+    copy.index = 0;
+    copyUnits().forEach(function (unit, i) {
+      unit.forEach(function (k) { if (k.kana === kana) copy.index = i; });
+    });
     presentCopy();
   }
 
@@ -845,8 +972,8 @@
     e.preventDefault();
     if (copyCanvas.setPointerCapture) { try { copyCanvas.setPointerCapture(e.pointerId); } catch (err) {} }
     copy.stroke = [copyPoint(e)];
-    copy.goes[copy.go].push(copy.stroke);
-    paint(copyCanvas, copy.goes[copy.go]);
+    copy.ink[copy.go][copy.col].push(copy.stroke);
+    paint(copyCanvas, copy.ink[copy.go][copy.col]);
   });
 
   // Only the newest piece of line is drawn while the finger moves, rather
@@ -868,7 +995,7 @@
     copyCanvas.addEventListener(evt, function () {
       if (!copy.stroke) return;
       copy.stroke = null;
-      paint(copyThumbs[copy.go].canvas, copy.goes[copy.go]);   // keep the small box in step
+      refreshThumbs();             // keep the small boxes in step
     });
   });
 
@@ -883,6 +1010,8 @@
   $('copyPrev').addEventListener('click', prevCopy);
   $('copyLeft').addEventListener('click', copyLeft);
   $('copyRight').addEventListener('click', copyRight);
+  $('copyOne').addEventListener('click', function () { switchCopy(false); });
+  $('copyRow').addEventListener('click', function () { switchCopy(true); });
 
   // ---------- character picker ----------
   var chart = $('chart');
@@ -1785,6 +1914,7 @@
   setDifficulty(state.difficulty);
   setWordRomaji(state.wordRomaji);
   setVolume(state.volume);
+  setCopyRow(state.copyRow);
   updateScore();
   toHome();
 })();
