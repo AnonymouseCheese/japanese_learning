@@ -229,6 +229,9 @@ body {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
+  /* Kept in from the screen edges: Safari takes a swipe that starts at the
+     left edge as "go back a page", and a stroke started there left the app. */
+  margin: 0 18px;
   background: var(--card);
   border-radius: 20px;
   overflow: hidden;
@@ -751,9 +754,9 @@ body {
 
 /* ---------- copy ---------- */
 /* Every box carries the dashed cross a Japanese exercise book has, so you can
-   see where each stroke sits against the middle - and the big model has the
-   same cross, so what you see there maps straight onto what you write. */
-.copy-model, .copy-box {
+   see where each stroke sits against the middle - and the model has the same
+   cross, so what you see there maps straight onto what you write. */
+.copy-model, .copy-pad, .copy-thumb, .copy-cell {
   background-color: var(--card);
   background-image:
     repeating-linear-gradient(to bottom, var(--line) 0 6px, transparent 6px 12px),
@@ -764,37 +767,92 @@ body {
   border: 1px solid var(--line);
 }
 
-.copy-top {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
+/* Safari takes a swipe that starts near the left edge of the screen as "go
+   back a page". Writing that started at the edge of the box did exactly that,
+   so everything on this screen sits well in from both edges. */
+.copy-head, .copy-thumbs { flex: 0 0 auto; margin: 0 18px; }
 
-/* A square that takes whatever height is left, up to a point. */
+.copy-head { display: flex; align-items: center; gap: 16px; }
+
 .copy-model {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: 300px;
-  max-width: 100%;
-  aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
+  width: 96px;
+  height: 96px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   font: inherit;
   color: var(--ink);
-  border-radius: 20px;
+  border-radius: 16px;
   touch-action: manipulation;
 }
 
 .copy-model:active { border-color: var(--accent); }
 
-/* The font size of the model and of the traces is set by app.js to match the
-   box, so all of them are the same shape at the same scale. */
+.copy-info { min-width: 0; }
+.copy-romaji { font-size: 26px; font-weight: 700; color: var(--accent); letter-spacing: .02em; line-height: 1.1; }
+.copy-hear { margin-top: 3px; font-size: 13px; color: var(--dim); }
+.copy-step { margin-top: 10px; font-size: 15px; font-weight: 600; }
+
+/* The six goes, in a row. The one in the big box is outlined. */
+.copy-thumbs {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  padding-top: 14px;
+}
+
+.copy-thumb, .copy-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  border-radius: 10px;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+.copy-thumb.now { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.copy-cell { border-radius: 14px; }
+
+/* What is left of the screen. app.js fits the big box into it. */
+.copy-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 14px 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-pad { position: relative; flex: 0 0 auto; border-radius: 20px; overflow: hidden; }
+
+.copy-pad canvas, .copy-thumb canvas, .copy-cell canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.copy-pad canvas { touch-action: none; }
+.copy-thumb canvas, .copy-cell canvas { pointer-events: none; }   /* the tap goes to the box */
+
+.copy-review { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+/* The faint character to trace over. How faint is set per go by app.js. */
+.copy-trace {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dim);
+  pointer-events: none;
+}
+
+/* The font size of every character here is set by app.js to suit its box. */
 .copy-kana, .copy-trace {
   font-family: var(--hand);
   font-weight: normal;
@@ -807,44 +865,11 @@ body {
 
 .copy-kana { display: block; }
 
-.copy-label { flex: 0 0 auto; font-size: 15px; color: var(--dim); }
-.copy-romaji { font-size: 22px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
+.mini:disabled { opacity: .4; }
 
-.copy-boxes {
-  flex: 0 0 auto;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  padding-top: 12px;
+/* A short screen - Safari with its toolbars showing on a small phone - needs
+   the room for the big box more than it needs a big model. */
+@media (max-height: 620px) {
+  .copy-model { width: 76px; height: 76px; }
+  .copy-step { margin-top: 6px; }
 }
-
-.copy-cap {
-  grid-column: 1 / -1;
-  margin: 2px 2px -4px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .04em;
-  color: var(--dim);
-}
-
-.copy-box {
-  position: relative;
-  aspect-ratio: 1 / 1;
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.copy-box canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
-
-/* The faint character to trace over. Its strength is set per box by app.js. */
-.copy-trace {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--dim);
-  pointer-events: none;
-}
-
-.btn:disabled { opacity: .45; }

@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=26">
+<link rel="stylesheet" href="style.css?v=27">
 </head>
 <body>
 
@@ -175,31 +175,44 @@
 </section>
 
 <!-- ===== COPY ===== -->
-<!-- Not a test: look at the character, trace it, then write it on your own.
-     The six writing boxes are added by app.js. -->
+<!-- Not a test: look at the character, then write it six times in one big
+     box - three over a faint copy, three on your own. The six small boxes
+     are added by app.js. -->
 <section id="copyScreen" class="screen hidden">
   <header class="bar">
     <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
     <span class="bar-title">Copy</span>
+    <span class="bar-actions">
+      <button id="copyPrev" class="mini">‹ prev</button>
+      <button id="copyNext" class="mini">next ›</button>
+    </span>
     <span id="copyPos" class="score">1 / 46</span>
   </header>
 
-  <div class="copy-top">
+  <div class="copy-head">
     <button id="copyModel" class="copy-model" aria-label="Hear it">
       <span id="copyKana" class="copy-kana">あ</span>
     </button>
-    <div class="copy-label">
-      <span id="copyRomaji" class="copy-romaji">a</span>
-      <span id="copyHear" class="copy-hear">· tap to hear</span>
+    <div class="copy-info">
+      <div id="copyRomaji" class="copy-romaji">a</div>
+      <div id="copyHear" class="copy-hear">tap it to hear it</div>
+      <div id="copyStep" class="copy-step">Trace over it · 1 of 6</div>
     </div>
   </div>
 
-  <div id="copyBoxes" class="copy-boxes"></div>
+  <div id="copyThumbs" class="copy-thumbs"></div>
+
+  <div id="copyStage" class="copy-stage">
+    <div id="copyPad" class="copy-pad">
+      <div id="copyTrace" class="copy-trace">あ</div>
+      <canvas id="copyCanvas"></canvas>
+    </div>
+    <div id="copyReview" class="copy-review hidden"></div>
+  </div>
 
   <div class="actions">
-    <button id="copyPrev" class="btn">‹ Back<span class="hint">←</span></button>
-    <button id="copyClear" class="btn">Clear<span class="hint">c</span></button>
-    <button id="copyNext" class="btn btn-primary"><span id="copyNextLabel">Next ›</span><span class="hint">→</span></button>
+    <button id="copyLeft" class="btn"><span id="copyLeftLabel">Clear</span><span class="hint">c</span></button>
+    <button id="copyRight" class="btn btn-primary"><span id="copyRightLabel">Done ›</span><span class="hint">space</span></button>
   </div>
 </section>
 
@@ -327,9 +340,9 @@
   </div>
 </section>
 
-<script src="data.js?v=26"></script>
-<script src="words.js?v=26"></script>
-<script src="sentences.js?v=26"></script>
-<script src="app.js?v=26"></script>
+<script src="data.js?v=27"></script>
+<script src="words.js?v=27"></script>
+<script src="sentences.js?v=27"></script>
+<script src="app.js?v=27"></script>
 </body>
 </html>

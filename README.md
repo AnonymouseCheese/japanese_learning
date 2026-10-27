@@ -189,22 +189,46 @@ Every other character just shows its romaji.
 
 ## Copy
 
-The character is shown large, with its sound underneath — tap it to hear it.
-Below are six boxes to write it in with your finger:
+The character is shown at the top with its sound — tap it to hear it. Below is
+one big box, and you write the character in it six times:
 
 ```
-Trace over it        あ  あ  あ      printed faintly, fainter each time
-Now on your own      □   □   □      empty
+go 1  2  3     あ printed faintly in the box, fainter each time - trace over it
+go 4  5  6     the box is empty - write it on your own
 ```
 
-Every box, and the big one, has the dashed cross through the middle that a
-Japanese exercise book has, so you can see where each stroke sits. **Next**
-clears the boxes and moves on, **Back** goes to the one before, **Clear** wipes
-them to go again. Nothing is marked, scored or saved.
+Write it, tap **Done**, and the box clears for the next go. Each go you finish
+is kept in a row of six small boxes above the big one, so you can compare as
+you go; tap a small box to go back and redo that one. After the sixth, all six
+are laid out together like a finished page, with **Again** to do them over or
+**Next character** to move on. **Clear** wipes the go you are on. Nothing is
+marked, scored or saved.
+
+Every box has the dashed cross through the middle that a Japanese exercise book
+has, so you can see where each stroke sits — the model at the top too, so what
+you see there maps straight onto what you write.
 
 It walks the chart in order, like List, and follows the character picker — so
 with only the か row switched on it is just か き く け こ, as many times as you
-like. After the last one, Next goes back round to the first.
+like. **‹ prev** and **next ›** in the top bar skip between characters at any
+point. After the last one it goes back round to the first.
+
+The first version had six small boxes on screen at once. They were too small to
+write in comfortably, which is why it is now one big box six times.
+
+### Safari going back a page
+
+Safari treats a swipe that starts near the left edge of the screen as "go back
+a page", which leaves the app. A stroke started at the left of a writing box
+did exactly that. So the writing areas in Copy, Write and List all sit 32 pixels
+in from the screen edges. As a second line of defence a touch on them is
+cancelled, which should also stop Safari reading it as a swipe — the drawing
+runs on pointer events and does not need the touch, so nothing is lost. The
+margin is the part that is certain; the cancelling could only be tested in
+Chrome, not on an iPhone.
+
+Opened from the home screen the app starts fresh, with no earlier page behind
+it, so there is nothing for a stray swipe to go back to.
 
 ### The handwriting font
 
@@ -220,7 +244,8 @@ and the browser only downloads it the first time Copy is opened. Klee One is
 free to use and share under the SIL Open Font License; the licence is in
 `fonts/OFL.txt`.
 
-On a desktop: `→` or `space` for next, `←` for back, `c` to clear.
+On a desktop: `space` for Done, `→` and `←` to skip between characters, `c` to
+clear.
 
 ## Exam
 

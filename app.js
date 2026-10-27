@@ -542,6 +542,18 @@
     pad.addEventListener(evt, function () { drawing = false; });
   });
 
+  // Safari takes a swipe that starts near the left edge of the screen as "go
+  // back a page", and leaves the app. The writing areas are kept well in from
+  // the edges for that reason (see style.css). Cancelling the touch itself is a
+  // second line of defence - drawing runs on pointer events, so nothing is lost.
+  function noEdgeSwipe(el) {
+    try {
+      el.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
+    } catch (err) { /* very old browser - the margins still apply */ }
+  }
+
+  noEdgeSwipe(pad);
+
   function nextWrite() {
     if (state.writeOrder === 'list') {
       var seq = pool();
@@ -617,139 +629,250 @@
   $('btnMissed').addEventListener('click', function () { gradeWrite(false); });
 
   // ---------- copy ----------
-  // Not a test - the way a first exercise book does it. The character is shown
-  // large, then there are six boxes to write it in. The first three have it
-  // printed faintly to trace over, fainter each time; the last three are empty,
-  // to write it on your own. Nothing is scored and nothing is saved. It walks
-  // the chart in order, like List, and follows the same selection.
-  var COPY_TRACE = [0.85, 0.5, 0.25, 0, 0, 0];   // how strongly each box shows the character
-  var copyPads = [];
-  var copyIndex = 0;
+  // Not a test - the way a first exercise book works. The character is shown,
+  // and you write it six times in one big box: three times over a faint copy
+  // that fades each time, then three times on your own. Each go is kept in the
+  // row of small boxes, and after the sixth all six are laid out together.
+  // Nothing is scored or saved. It walks the chart in order, like List, and
+  // follows the same selection.
+  var COPY_TRACE = [0.85, 0.5, 0.25, 0, 0, 0];   // how strongly each go shows the character
+  var COPY_GOES = COPY_TRACE.length;
 
-  function copyCaption(text) {
-    var cap = document.createElement('div');
-    cap.className = 'copy-cap';
-    cap.textContent = text;
-    $('copyBoxes').appendChild(cap);
-  }
+  // Each go is kept as the strokes you drew rather than as a picture, with
+  // every point stored as a fraction of the box. So the same writing can be
+  // drawn into the big box, a small one or the review at the end, and stays
+  // sharp at every size - and turning the phone does not wipe it.
+  var copy = {
+    index: 0,          // which character, counting through pool()
+    go: 0,             // which of the six goes is in the big box
+    review: false,     // true while all six are laid out together
+    goes: [],          // goes[n] is a list of strokes; a stroke is a list of [x, y]
+    stroke: null       // the stroke being drawn right now
+  };
 
-  // One small drawing pad. The same idea as the big Write pad, but there are
-  // six of these, so each one keeps its own canvas and its own pen.
-  function makeCopyPad(strength) {
-    var box = document.createElement('div');
-    box.className = 'copy-box';
+  var copyCanvas = $('copyCanvas');
+  var copyThumbs = [];   // the row of six small boxes
+  var copyCells = [];    // the same six, laid out large at the end
+
+  // A small box: the faint character behind, your writing on top. Tapping one
+  // takes you back to that go to do it again.
+  function copyMini(parent, cls, n) {
+    var b = document.createElement('button');
+    b.className = cls;
     var trace = document.createElement('div');
     trace.className = 'copy-trace';
-    trace.style.opacity = strength;
+    trace.style.opacity = COPY_TRACE[n];
     var canvas = document.createElement('canvas');
-    box.appendChild(trace);
-    box.appendChild(canvas);
-    $('copyBoxes').appendChild(box);
-
-    var p = { box: box, trace: trace, canvas: canvas, ctx: canvas.getContext('2d'), scale: 1, drawing: false };
-
-    function at(e) {
-      var r = canvas.getBoundingClientRect();
-      return { x: (e.clientX - r.left) * p.scale, y: (e.clientY - r.top) * p.scale };
-    }
-
-    canvas.addEventListener('pointerdown', function (e) {
-      e.preventDefault();
-      p.drawing = true;
-      if (canvas.setPointerCapture) { try { canvas.setPointerCapture(e.pointerId); } catch (err) {} }
-      var pt = at(e);
-      p.ctx.beginPath();
-      p.ctx.moveTo(pt.x, pt.y);
-      p.ctx.lineTo(pt.x + 0.1, pt.y + 0.1);      // a plain tap still leaves a dot
-      p.ctx.stroke();
-    });
-
-    canvas.addEventListener('pointermove', function (e) {
-      if (!p.drawing) return;
-      e.preventDefault();
-      var pt = at(e);
-      p.ctx.lineTo(pt.x, pt.y);
-      p.ctx.stroke();
-    });
-
-    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (evt) {
-      canvas.addEventListener(evt, function () { p.drawing = false; });
-    });
-
-    return p;
+    b.appendChild(trace);
+    b.appendChild(canvas);
+    b.addEventListener('click', function () { showGo(n); });
+    parent.appendChild(b);
+    return { el: b, trace: trace, canvas: canvas };
   }
 
-  copyCaption('Trace over it');
-  COPY_TRACE.forEach(function (strength, i) {
-    if (i === 3) copyCaption('Now on your own');
-    copyPads.push(makeCopyPad(strength));
-  });
-
-  function clearCopyPad(p) {
-    var w = p.canvas.width;
-    p.ctx.clearRect(0, 0, w, p.canvas.height);
-    p.ctx.strokeStyle = cssVar('--ink', '#fff');
-    p.ctx.lineWidth = Math.max(4 * p.scale, w * 0.05);   // in step with the box size
-    p.ctx.lineCap = 'round';
-    p.ctx.lineJoin = 'round';
+  for (var g = 0; g < COPY_GOES; g++) {
+    copyThumbs.push(copyMini($('copyThumbs'), 'copy-thumb', g));
+    copyCells.push(copyMini($('copyReview'), 'copy-cell', g));
   }
 
-  function clearCopy() { copyPads.forEach(clearCopyPad); }
+  // Draw a list of strokes into a canvas of any size.
+  function paint(canvas, strokes) {
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = cssVar('--ink', '#fff');
+    ctx.lineWidth = Math.max(2, w * 0.03);       // in step with the box size
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    strokes.forEach(function (s) {
+      ctx.beginPath();
+      ctx.moveTo(s[0][0] * w, s[0][1] * h);
+      ctx.lineTo(s[0][0] * w + 0.1, s[0][1] * h + 0.1);   // a plain tap still leaves a dot
+      for (var i = 1; i < s.length; i++) ctx.lineTo(s[i][0] * w, s[i][1] * h);
+      ctx.stroke();
+    });
+  }
 
-  // The boxes only have a size once the screen is showing. The characters are
-  // sized to the same share of their box everywhere, model included, so the
-  // trace you write over is exactly the shape you were just looking at.
+  // Give a canvas as many pixels as its box has on screen, so lines are sharp.
+  function fitCanvas(canvas) {
+    var r = canvas.parentNode.getBoundingClientRect();
+    if (!r.width) return 0;
+    var scale = window.devicePixelRatio || 1;
+    canvas.width = Math.round(r.width * scale);
+    canvas.height = Math.round(r.height * scale);
+    return r.width;
+  }
+
+  // Every character is drawn at the same share of its box - the model, the
+  // big box and the small ones - so the faint copy you trace over is exactly
+  // the shape you were just looking at.
+  function fitMini(m) {
+    var w = fitCanvas(m.canvas);
+    if (w) m.trace.style.fontSize = Math.round(w * 0.78) + 'px';
+  }
+
+  // The big box is the largest square that fits the space left over. Done in
+  // code rather than CSS because Safari is unreliable at sizing a square that
+  // has to fit both ways.
   function sizeCopy() {
     var model = $('copyModel').getBoundingClientRect();
     if (model.width) $('copyKana').style.fontSize = Math.round(model.width * 0.78) + 'px';
 
-    copyPads.forEach(function (p) {
-      var r = p.box.getBoundingClientRect();
-      if (!r.width) return;
-      p.scale = window.devicePixelRatio || 1;
-      p.canvas.width = Math.round(r.width * p.scale);
-      p.canvas.height = Math.round(r.height * p.scale);
-      p.trace.style.fontSize = Math.round(r.width * 0.78) + 'px';
-    });
-    clearCopy();
+    var stage = $('copyStage').getBoundingClientRect();
+    if (!stage.width) return;
+    if (copy.review) {
+      // three across and two down, so it can be half as wide again as it is tall
+      $('copyReview').style.width = Math.floor(Math.min(stage.width, stage.height * 1.5)) + 'px';
+      copyCells.forEach(fitMini);
+    } else {
+      var side = Math.floor(Math.min(stage.width, stage.height));
+      $('copyPad').style.width = side + 'px';
+      $('copyPad').style.height = side + 'px';
+      $('copyTrace').style.fontSize = Math.round(side * 0.78) + 'px';
+      fitCanvas(copyCanvas);
+      copyThumbs.forEach(fitMini);
+    }
+    repaintCopy();
+  }
+
+  function repaintCopy() {
+    if (copy.review) {
+      copyCells.forEach(function (c, n) { paint(c.canvas, copy.goes[n]); });
+      return;
+    }
+    paint(copyCanvas, copy.goes[copy.go]);
+    copyThumbs.forEach(function (t, n) { paint(t.canvas, copy.goes[n]); });
+  }
+
+  function emptyGoes() {
+    return COPY_TRACE.map(function () { return []; });
   }
 
   function startCopy() {
     if (!pool().length) return;
-    copyIndex = 0;
+    copy.index = 0;
     show('copy');
     presentCopy();
-    requestAnimationFrame(sizeCopy);
+    sizeCopy();
   }
 
   function presentCopy() {
     var seq = pool();
     if (!seq.length) { toMenu(); return; }
-    if (copyIndex >= seq.length) copyIndex = 0;
-    var item = seq[copyIndex];
+    if (copy.index >= seq.length) copy.index = 0;
+    var item = seq[copy.index];
     state.current = item;
+    copy.goes = emptyGoes();
 
     $('copyKana').textContent = item.kana;
     $('copyRomaji').textContent = labelText(item);
     $('copyHear').classList.toggle('hidden', !soundOn());
-    $('copyPos').textContent = (copyIndex + 1) + ' / ' + seq.length;
-    $('copyPrev').disabled = copyIndex === 0;
-    $('copyNextLabel').textContent = copyIndex === seq.length - 1 ? 'Start again' : 'Next ›';
-    copyPads.forEach(function (p) { p.trace.textContent = item.kana; });
-    clearCopy();
+    $('copyPos').textContent = (copy.index + 1) + ' / ' + seq.length;
+    $('copyPrev').disabled = copy.index === 0;
+    $('copyTrace').textContent = item.kana;
+    copyThumbs.concat(copyCells).forEach(function (m) { m.trace.textContent = item.kana; });
+    showGo(0);
+  }
+
+  // Put one of the six goes in the big box.
+  function showGo(n) {
+    var fromReview = copy.review;
+    copy.go = n;
+    copy.review = false;
+    $('copyPad').classList.remove('hidden');
+    $('copyThumbs').classList.remove('hidden');
+    $('copyReview').classList.add('hidden');
+
+    $('copyTrace').style.opacity = COPY_TRACE[n];
+    $('copyStep').textContent = (COPY_TRACE[n] ? 'Trace over it' : 'Now on your own') +
+      ' · ' + (n + 1) + ' of ' + COPY_GOES;
+    copyThumbs.forEach(function (t, i) { t.el.classList.toggle('now', i === n); });
+    $('copyLeftLabel').textContent = 'Clear';
+    $('copyRightLabel').textContent = n < COPY_GOES - 1 ? 'Done ›' : 'See all six ›';
+
+    if (fromReview) { sizeCopy(); } else { paint(copyCanvas, copy.goes[n]); }
+  }
+
+  // All six together, like a finished page.
+  function showReview() {
+    copy.review = true;
+    $('copyPad').classList.add('hidden');
+    $('copyThumbs').classList.add('hidden');
+    $('copyReview').classList.remove('hidden');
+    $('copyStep').textContent = 'All six done';
+    $('copyLeftLabel').textContent = 'Again';
+    $('copyRightLabel').textContent = copy.index + 1 < pool().length ? 'Next character ›' : 'Back to the start';
+    sizeCopy();
+  }
+
+  // The big button: on to the next go, then the page of all six, then the
+  // next character.
+  function copyRight() {
+    if (copy.review) { nextCopy(); return; }
+    if (copy.go < COPY_GOES - 1) { showGo(copy.go + 1); } else { showReview(); }
+  }
+
+  // Clear the go in the big box - or, on the page of all six, start them again.
+  function copyLeft() {
+    if (copy.review) {
+      copy.goes = emptyGoes();
+      showGo(0);
+      return;
+    }
+    copy.goes[copy.go] = [];
+    paint(copyCanvas, []);
+    paint(copyThumbs[copy.go].canvas, []);
   }
 
   // Past the last character it goes back round to the first.
   function nextCopy() {
-    copyIndex = copyIndex + 1 < pool().length ? copyIndex + 1 : 0;
+    copy.index = copy.index + 1 < pool().length ? copy.index + 1 : 0;
     presentCopy();
   }
 
   function prevCopy() {
-    if (copyIndex === 0) return;
-    copyIndex--;
+    if (copy.index === 0) return;
+    copy.index--;
     presentCopy();
   }
+
+  function copyPoint(e) {
+    var r = copyCanvas.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
+  }
+
+  copyCanvas.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    if (copyCanvas.setPointerCapture) { try { copyCanvas.setPointerCapture(e.pointerId); } catch (err) {} }
+    copy.stroke = [copyPoint(e)];
+    copy.goes[copy.go].push(copy.stroke);
+    paint(copyCanvas, copy.goes[copy.go]);
+  });
+
+  // Only the newest piece of line is drawn while the finger moves, rather
+  // than repainting the whole character every time.
+  copyCanvas.addEventListener('pointermove', function (e) {
+    if (!copy.stroke) return;
+    e.preventDefault();
+    var last = copy.stroke[copy.stroke.length - 1];
+    var p = copyPoint(e);
+    copy.stroke.push(p);
+    var ctx = copyCanvas.getContext('2d'), w = copyCanvas.width, h = copyCanvas.height;
+    ctx.beginPath();
+    ctx.moveTo(last[0] * w, last[1] * h);
+    ctx.lineTo(p[0] * w, p[1] * h);
+    ctx.stroke();
+  });
+
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (evt) {
+    copyCanvas.addEventListener(evt, function () {
+      if (!copy.stroke) return;
+      copy.stroke = null;
+      paint(copyThumbs[copy.go].canvas, copy.goes[copy.go]);   // keep the small box in step
+    });
+  });
+
+  noEdgeSwipe(copyCanvas);
 
   // Same as tapping a character on the chart - nothing here is being tested,
   // so hearing it gives nothing away.
@@ -758,7 +881,8 @@
   });
   $('copyNext').addEventListener('click', nextCopy);
   $('copyPrev').addEventListener('click', prevCopy);
-  $('copyClear').addEventListener('click', clearCopy);
+  $('copyLeft').addEventListener('click', copyLeft);
+  $('copyRight').addEventListener('click', copyRight);
 
   // ---------- character picker ----------
   var chart = $('chart');
@@ -1603,9 +1727,10 @@
     }
     if (state.screen === 'copy') {
       if (e.key === 'Escape') { toMenu(); return; }
-      if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nextCopy(); }
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); copyRight(); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); nextCopy(); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); prevCopy(); }
-      else if (e.key === 'c') { e.preventDefault(); clearCopy(); }
+      else if (e.key === 'c' && !copy.review) { e.preventDefault(); copyLeft(); }
       return;
     }
     if (state.screen === 'words') {
