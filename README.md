@@ -313,7 +313,25 @@ A switch under the line chooses how you answer. **Type** is everything above.
 with your finger — and the app remembers which you used.
 
 A phone browser has no way to read handwriting, so in Draw you check yourself,
-the same as Write:
+the same as Write. A second switch, shown only in Draw, says when: **Check one
+by one** or **Check all at the end**. That choice is remembered too.
+
+**One by one:**
+
+- Write the sound of the outlined character and tap **Check**. The right
+  answer appears in the box, faintly, behind what you wrote, sitting on the
+  dashed line so the two are easy to compare. Then tap **Got it** or **Missed
+  it**, and the next character comes up with the box empty.
+- Each one counts toward your progress as soon as you mark it, the same as a
+  typed answer, and its carriage turns green or red with the answer under it.
+- Check with nothing written is a miss straight away — there is nothing to
+  compare.
+- At the end of the line you get the score, the time and the ones you missed,
+  the same as Type.
+
+On a desktop: `space` to check, then `y` or `n`.
+
+**All at the end:**
 
 - Write the sound of the outlined character and tap **Next**. The ones you
   have done fade, and no answers show yet. **clear** wipes the box. Stuck?
@@ -324,12 +342,12 @@ the same as Write:
 - **Next train** counts them toward your progress and brings a new line.
   Going back to the menu counts them too — nothing you checked is lost.
 
-The box is wider than it is tall, since a sound is a short word, with a dashed
-line to write along. Like every writing area in the app it sits 32 pixels in
-from the screen edges, so a stroke at the left cannot trigger Safari's swipe
-back.
+On a desktop: `space` for Next.
 
-On a desktop: `space` for Next, `c` to clear.
+Either way, the box is wider than it is tall, since a sound is a short word,
+with a dashed line to write along, and `c` clears it on a desktop. Like every
+writing area in the app it sits 32 pixels in from the screen edges, so a
+stroke at the left cannot trigger Safari's swipe back.
 
 ## Exam
 

@@ -332,6 +332,24 @@ body {
 
 .train-pad canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
 
+/* One by one: the answer appears behind your writing, sitting on the dashed
+   line so the two can be compared. Its size is set by app.js to suit the box.
+   The nudge down puts the bottom of the letters on the line rather than the
+   bottom of the line of text, which is a little lower. */
+.train-ghost {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 32%;
+  text-align: center;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--accent);
+  opacity: .45;
+  transform: translateY(.08em);
+  pointer-events: none;
+}
+
 /* Sits at the bottom of the screen, under the thumb. */
 .train-draw-actions { margin-top: auto; }
 

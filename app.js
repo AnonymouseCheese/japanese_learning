@@ -18,6 +18,7 @@
     writeOrder: 'random',      // random | list - how Write picks the next character
     copyRow: true,             // Copy a whole row at a time, rather than one character
     trainDraw: false,          // Train by writing the sound by hand, rather than typing it
+    trainEach: false,          // in Draw, check each one straight away rather than at the end
     exam: null,                // the exam in progress, or null
     examSeen: {},              // what this round of exams has already covered
     listIndex: 0,              // position through the chart when running in order
@@ -45,6 +46,7 @@
       if (saved.volume) state.volume = saved.volume;
       if (typeof saved.copyRow === 'boolean') state.copyRow = saved.copyRow;
       if (typeof saved.trainDraw === 'boolean') state.trainDraw = saved.trainDraw;
+      if (typeof saved.trainEach === 'boolean') state.trainEach = saved.trainEach;
       return;
     }
 
@@ -66,7 +68,8 @@
       localStorage.setItem(STORE, JSON.stringify({
         off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id,
         combo: state.combo, wordRomaji: state.wordRomaji, examSeen: state.examSeen,
-        volume: state.volume, copyRow: state.copyRow, trainDraw: state.trainDraw
+        volume: state.volume, copyRow: state.copyRow, trainDraw: state.trainDraw,
+        trainEach: state.trainEach
       }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
@@ -496,14 +499,16 @@
   // not marked wrong tells you the character is in the k row.
   //
   // Or, with Draw switched on, you write each sound by hand in a box. A phone
-  // browser cannot read handwriting, so you check those yourself: at the end
-  // of the line each drawing is shown beside the right answer, and you tap
-  // any you got wrong - the same idea as Write.
+  // browser cannot read handwriting, so you check those yourself - the same
+  // idea as Write. Either one by one, the answer appearing behind your
+  // writing as soon as you have done it, or all at the end of the line, each
+  // drawing beside its answer and a tap on any you got wrong.
   var TRAIN_LENGTH = 8;
 
   var TRAIN_HINT = {
     type: 'Press space after each sound. Stuck on one? Press next (or Enter) with nothing typed and it shows you.',
-    draw: 'Write the sound of the outlined character, then Next. Stuck? Next with nothing written. You check them all at the end.'
+    draw: 'Write the sound of the outlined character, then Next. Stuck? Next with nothing written. You check them all at the end.',
+    each: 'Write the sound of the outlined character, then Check to see the answer. Stuck? Check with nothing written.'
   };
 
   // Accepted as well as the spelling the app shows. These are the other usual
@@ -517,6 +522,8 @@
     started: 0,        // when the line appeared, for the time at the end
     secs: 0,           // how long the line took
     draw: false,       // this line is being drawn rather than typed
+    each: false,       // Draw only: checked one by one rather than at the end
+    revealed: false,   // one by one: the answer is showing, waiting for got it / missed it
     done: false,       // every character answered
     settled: false,    // Draw only: your ticks and crosses have been counted
     stroke: null       // Draw only: the line being drawn right now
@@ -560,16 +567,21 @@
     train.done = false;
     train.settled = false;
     train.draw = state.trainDraw;
+    train.each = train.draw && state.trainEach;
+    train.revealed = false;
     trainInput.value = '';
 
     var draw = train.draw;
     $('trainForm').classList.toggle('hidden', draw);
+    $('trainCheckMode').classList.toggle('hidden', !draw);
     $('trainPad').classList.toggle('hidden', !draw);
+    $('trainGhost').classList.add('hidden');
     $('trainDrawActions').classList.toggle('hidden', !draw);
+    $('trainGrade').classList.add('hidden');
     $('trainCheck').classList.add('hidden');
     $('trainResult').classList.add('hidden');
     $('trainHint').classList.remove('hidden');
-    $('trainHint').textContent = draw ? TRAIN_HINT.draw : TRAIN_HINT.type;
+    $('trainHint').textContent = !draw ? TRAIN_HINT.type : train.each ? TRAIN_HINT.each : TRAIN_HINT.draw;
     markCar();
     if (draw) { requestAnimationFrame(sizeTrainPad); } else { trainInput.focus(); }
   }
@@ -588,15 +600,17 @@
     return { item: item, el: el, said: said, typed: '', ink: [], correct: false };
   }
 
-  // Outline the one you are on. In Draw, the ones already written are faded,
-  // since their answers do not show until the end.
+  // Outline the one you are on. When checking at the end, the ones already
+  // written are faded, since their answers do not show until then.
   function markCar() {
+    var atEnd = train.draw && !train.each;
     train.cars.forEach(function (car, i) {
       car.el.classList.toggle('now', i === train.at && !train.done);
-      car.el.classList.toggle('past', train.draw && !train.done && i < train.at);
+      car.el.classList.toggle('past', atEnd && !train.done && i < train.at);
     });
     var last = train.at === train.cars.length - 1;
-    $('trainDrawLabel').textContent = train.done ? 'Next train ›' : last ? 'Check ›' : 'Next ›';
+    $('trainDrawLabel').textContent = train.done ? 'Next train ›'
+      : (train.each || last) ? 'Check ›' : 'Next ›';
   }
 
   // Count one answer toward your progress.
@@ -647,12 +661,16 @@
       head.textContent = 'Missed';
       missed.appendChild(head);
       wrong.forEach(function (car) {
-        var note = car.typed ? 'you typed ' + car.typed : 'you skipped it';
-        missed.appendChild(examRow(car.item.kana, labelText(car.item) + '  ·  ' + note, 'exam-kana'));
+        var note = train.draw ? (car.ink.length ? '' : 'left blank')
+          : car.typed ? 'you typed ' + car.typed : 'you skipped it';
+        missed.appendChild(examRow(car.item.kana,
+          labelText(car.item) + (note ? '  ·  ' + note : ''), 'exam-kana'));
       });
     }
 
     $('trainHint').classList.add('hidden');
+    $('trainPad').classList.add('hidden');
+    $('trainDrawActions').classList.add('hidden');
     $('trainResult').classList.remove('hidden');
   }
 
@@ -700,22 +718,28 @@
   // the end can draw them again in a smaller box of the same shape.
   var trainCanvas = $('trainCanvas');
 
+  // The answer shown behind your writing is sized to the box, sitting on the
+  // dashed line the way you would write it.
   function sizeTrainPad() {
     fitCanvas(trainCanvas);
+    var box = $('trainPad').getBoundingClientRect();
+    if (box.height) $('trainGhost').style.fontSize = Math.round(box.height * 0.42) + 'px';
     var car = train.cars[train.at];
     paint(trainCanvas, car && !train.done ? car.ink : []);
   }
 
   function clearTrainPad() {
-    if (train.done) return;
+    if (train.done || train.revealed) return;
     train.cars[train.at].ink = [];
     paint(trainCanvas, []);
   }
 
   // The big button: on to the next character, then to the check, then a new
-  // line once you have checked it.
+  // line once you have checked it. One by one, it checks the character you
+  // have just written instead.
   function trainDrawNext() {
     if (train.done) { newTrain(); return; }
+    if (train.each) { revealDrawn(); return; }
     train.at++;
     if (train.at >= train.cars.length) { checkDrawn(); return; }
     paint(trainCanvas, []);
@@ -800,11 +824,46 @@
       train.secs.toFixed(1) + ' seconds';
   }
 
+  // One by one: the answer appears in the box behind what you wrote, so the
+  // two can be compared, and you say whether you got it. Nothing written
+  // is a miss straight away - there is nothing to compare.
+  function revealDrawn() {
+    var car = train.cars[train.at];
+    if (!car.ink.length) { gradeDrawn(false); return; }
+    train.revealed = true;
+    car.said.textContent = car.item.romaji;
+    $('trainGhost').textContent = car.item.romaji;
+    $('trainGhost').classList.remove('hidden');
+    $('trainDrawActions').classList.add('hidden');
+    $('trainGrade').classList.remove('hidden');
+  }
+
+  // Counted straight away, like a typed answer.
+  function gradeDrawn(correct) {
+    var car = train.cars[train.at];
+    car.correct = correct;
+    car.said.textContent = car.item.romaji;
+    car.el.classList.add(correct ? 'right' : 'wrong');
+    scoreCar(car);
+    updateScore();
+    save();
+
+    train.revealed = false;
+    $('trainGhost').classList.add('hidden');
+    $('trainGrade').classList.add('hidden');
+    $('trainDrawActions').classList.remove('hidden');
+
+    train.at++;
+    if (train.at >= train.cars.length) { finishTrain(); return; }
+    paint(trainCanvas, []);
+    markCar();
+  }
+
   // Your ticks and crosses count toward progress once you move on - to the
   // next line, back to the menu, or to the other mode - so you can change
-  // your mind about any of them until then.
+  // your mind about any of them until then. (One by one counts as you go.)
   function settleTrain() {
-    if (!train.draw || !train.done || train.settled) return;
+    if (!train.draw || train.each || !train.done || train.settled) return;
     train.settled = true;
     train.cars.forEach(scoreCar);
     updateScore();
@@ -817,7 +876,7 @@
   }
 
   trainCanvas.addEventListener('pointerdown', function (e) {
-    if (train.done) return;
+    if (train.done || train.revealed) return;
     e.preventDefault();
     if (trainCanvas.setPointerCapture) { try { trainCanvas.setPointerCapture(e.pointerId); } catch (err) {} }
     var ink = train.cars[train.at].ink;
@@ -861,8 +920,27 @@
     newTrain();
   }
 
+  // In Draw: check one by one, or all at the end. Remembered the same way.
+  function setTrainEach(on) {
+    state.trainEach = on;
+    $('trainEach').classList.toggle('on', on);
+    $('trainAtEnd').classList.toggle('on', !on);
+    save();
+  }
+
+  function switchTrainEach(on) {
+    if (on === state.trainEach) return;
+    settleTrain();
+    setTrainEach(on);
+    newTrain();
+  }
+
   $('trainType').addEventListener('click', function () { switchTrain(false); });
   $('trainDraw').addEventListener('click', function () { switchTrain(true); });
+  $('trainEach').addEventListener('click', function () { switchTrainEach(true); });
+  $('trainAtEnd').addEventListener('click', function () { switchTrainEach(false); });
+  $('trainGot').addEventListener('click', function () { gradeDrawn(true); });
+  $('trainMissed').addEventListener('click', function () { gradeDrawn(false); });
   $('trainClear').addEventListener('click', clearTrainPad);
   $('trainDrawNext').addEventListener('click', trainDrawNext);
 
@@ -2250,6 +2328,11 @@
     }
     if (state.screen === 'train') {
       if (e.key === 'Escape') { toMenu(); return; }
+      if (train.draw && train.revealed) {
+        if (e.key === 'y' || e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); gradeDrawn(true); }
+        else if (e.key === 'n' || e.key === 'ArrowLeft') { e.preventDefault(); gradeDrawn(false); }
+        return;
+      }
       if (train.draw) {
         if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); trainDrawNext(); }
         else if (e.key === 'c') { e.preventDefault(); clearTrainPad(); }
@@ -2323,6 +2406,7 @@
   setVolume(state.volume);
   setCopyRow(state.copyRow);
   setTrainDraw(state.trainDraw);
+  setTrainEach(state.trainEach);
   updateScore();
   toHome();
 })();
