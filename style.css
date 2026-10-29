@@ -332,22 +332,17 @@ body {
 
 .train-pad canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
 
-/* One by one: the answer appears behind your writing, sitting on the dashed
-   line so the two can be compared. Its size is set by app.js to suit the box.
-   The nudge down puts the bottom of the letters on the line rather than the
-   bottom of the line of text, which is a little lower. */
-.train-ghost {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 32%;
-  text-align: center;
-  font-weight: 600;
-  line-height: 1;
+/* One by one: the answer takes the place of the instructions above the box.
+   Both are given the same height - two lines of instructions - so the box
+   stays exactly where it is while you compare. */
+.train-hint { min-height: 39px; }
+
+.train-hint.train-answer {
+  font-family: var(--kana);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 39px;
   color: var(--accent);
-  opacity: .45;
-  transform: translateY(.08em);
-  pointer-events: none;
 }
 
 /* Sits at the bottom of the screen, under the thumb. */
@@ -362,7 +357,7 @@ body {
   padding-top: 14px;
 }
 
-.train-check .train-hint { margin: 0 0 12px; }
+.train-check .train-hint { min-height: 0; margin: 0 0 12px; }
 
 .check-row {
   display: flex;

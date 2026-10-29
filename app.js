@@ -508,7 +508,7 @@
   var TRAIN_HINT = {
     type: 'Press space after each sound. Stuck on one? Press next (or Enter) with nothing typed and it shows you.',
     draw: 'Write the sound of the outlined character, then Next. Stuck? Next with nothing written. You check them all at the end.',
-    each: 'Write the sound of the outlined character, then Check to see the answer. Stuck? Check with nothing written.'
+    each: 'Write the sound, then Check to see the answer. Stuck? Check with nothing written.'
   };
 
   // Accepted as well as the spelling the app shows. These are the other usual
@@ -575,13 +575,13 @@
     $('trainForm').classList.toggle('hidden', draw);
     $('trainCheckMode').classList.toggle('hidden', !draw);
     $('trainPad').classList.toggle('hidden', !draw);
-    $('trainGhost').classList.add('hidden');
     $('trainDrawActions').classList.toggle('hidden', !draw);
+    $('trainClear').classList.remove('hidden');
     $('trainGrade').classList.add('hidden');
     $('trainCheck').classList.add('hidden');
     $('trainResult').classList.add('hidden');
     $('trainHint').classList.remove('hidden');
-    $('trainHint').textContent = !draw ? TRAIN_HINT.type : train.each ? TRAIN_HINT.each : TRAIN_HINT.draw;
+    trainHintText();
     markCar();
     if (draw) { requestAnimationFrame(sizeTrainPad); } else { trainInput.focus(); }
   }
@@ -718,12 +718,8 @@
   // the end can draw them again in a smaller box of the same shape.
   var trainCanvas = $('trainCanvas');
 
-  // The answer shown behind your writing is sized to the box, sitting on the
-  // dashed line the way you would write it.
   function sizeTrainPad() {
     fitCanvas(trainCanvas);
-    var box = $('trainPad').getBoundingClientRect();
-    if (box.height) $('trainGhost').style.fontSize = Math.round(box.height * 0.42) + 'px';
     var car = train.cars[train.at];
     paint(trainCanvas, car && !train.done ? car.ink : []);
   }
@@ -824,16 +820,32 @@
       train.secs.toFixed(1) + ' seconds';
   }
 
-  // One by one: the answer appears in the box behind what you wrote, so the
-  // two can be compared, and you say whether you got it. Nothing written
-  // is a miss straight away - there is nothing to compare.
+  // The line of instructions above the box. One by one, it turns into the
+  // answer while you decide whether you got it.
+  //
+  // The answer used to appear inside the box, behind your writing - but you
+  // write in exactly that spot, so your own strokes covered it. Up here
+  // nothing can cover it, and it takes the place of the instructions rather
+  // than adding a line, so the box does not move.
+  function trainHintText() {
+    var hint = $('trainHint');
+    var car = train.cars[train.at];
+    hint.classList.toggle('train-answer', train.revealed);
+    hint.textContent = train.revealed ? car.item.kana + ' = ' + labelText(car.item)
+      : !train.draw ? TRAIN_HINT.type
+      : train.each ? TRAIN_HINT.each : TRAIN_HINT.draw;
+  }
+
+  // One by one: the answer appears above the box, and you say whether what
+  // you wrote matches it. Nothing written is a miss straight away - there
+  // is nothing to compare.
   function revealDrawn() {
     var car = train.cars[train.at];
     if (!car.ink.length) { gradeDrawn(false); return; }
     train.revealed = true;
     car.said.textContent = car.item.romaji;
-    $('trainGhost').textContent = car.item.romaji;
-    $('trainGhost').classList.remove('hidden');
+    trainHintText();
+    $('trainClear').classList.add('hidden');         // the writing is fixed now
     $('trainDrawActions').classList.add('hidden');
     $('trainGrade').classList.remove('hidden');
   }
@@ -849,7 +861,8 @@
     save();
 
     train.revealed = false;
-    $('trainGhost').classList.add('hidden');
+    trainHintText();
+    $('trainClear').classList.remove('hidden');
     $('trainGrade').classList.add('hidden');
     $('trainDrawActions').classList.remove('hidden');
 

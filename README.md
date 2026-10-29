@@ -319,9 +319,13 @@ by one** or **Check all at the end**. That choice is remembered too.
 **One by one:**
 
 - Write the sound of the outlined character and tap **Check**. The right
-  answer appears in the box, faintly, behind what you wrote, sitting on the
-  dashed line so the two are easy to compare. Then tap **Got it** or **Missed
-  it**, and the next character comes up with the box empty.
+  answer appears in large letters just above the box — `ふ = fu` — in place
+  of the instructions. Then tap **Got it** or **Missed it**, and the next
+  character comes up with the box empty.
+- The answer used to appear inside the box, behind your writing, but you
+  write in exactly that spot and your own strokes covered it. Above the box
+  nothing can, and since it replaces a line rather than adding one, the box
+  stays where it is while you compare.
 - Each one counts toward your progress as soon as you mark it, the same as a
   typed answer, and its carriage turns green or red with the answer under it.
 - Check with nothing written is a miss straight away — there is nothing to
