@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=29">
+<link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
 
@@ -90,7 +90,7 @@
     <button id="goTrain" class="menu-btn">
       <span class="menu-btn-kana">ね か し と → ne ka shi to</span>
       <span class="menu-btn-main">Train</span>
-      <span class="menu-btn-sub">Read a line of characters, type each sound</span>
+      <span class="menu-btn-sub">Read a line of characters, type or draw each sound</span>
     </button>
     <button id="goWrite" class="menu-btn">
       <span class="menu-btn-kana">ka → か</span>
@@ -158,6 +158,10 @@
     <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
   </header>
   <div id="trainLine" class="train-line"></div>
+  <div class="seg train-mode">
+    <button id="trainType" class="seg-btn">Type</button>
+    <button id="trainDraw" class="seg-btn">Draw</button>
+  </div>
   <form id="trainForm" class="train-form">
     <input id="trainInput" class="train-input" type="text" placeholder="type the sound"
       autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
@@ -165,6 +169,15 @@
   </form>
   <p id="trainHint" class="train-hint">Press space after each sound. Stuck on one?
   Press next (or Enter) with nothing typed and it shows you.</p>
+  <!-- Draw: a box to write the sound in by hand, then a check at the end -->
+  <div id="trainPad" class="train-pad hidden">
+    <canvas id="trainCanvas"></canvas>
+    <button id="trainClear" class="clear">clear</button>
+  </div>
+  <div id="trainCheck" class="train-check hidden"></div>
+  <div id="trainDrawActions" class="actions train-draw-actions hidden">
+    <button id="trainDrawNext" class="btn btn-primary"><span id="trainDrawLabel">Next ›</span><span class="hint">space</span></button>
+  </div>
   <div id="trainResult" class="train-result hidden">
     <div id="trainScore" class="train-score"></div>
     <button id="trainNext" class="btn btn-primary">Next train<span class="hint">enter</span></button>
@@ -375,9 +388,9 @@
   </div>
 </section>
 
-<script src="data.js?v=29"></script>
-<script src="words.js?v=29"></script>
-<script src="sentences.js?v=29"></script>
-<script src="app.js?v=29"></script>
+<script src="data.js?v=30"></script>
+<script src="words.js?v=30"></script>
+<script src="sentences.js?v=30"></script>
+<script src="app.js?v=30"></script>
 </body>
 </html>

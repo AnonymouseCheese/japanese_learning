@@ -171,8 +171,8 @@ Every other character just shows its romaji.
 - **Identify (か → ka)** — a character appears, you tap the sound it makes. The three
   wrong answers are picked from look-alike characters and the same row, so it
   stays hard rather than guessable.
-- **Train** — a line of eight characters, read left to right, typing the sound
-  of each one. See below.
+- **Train** — a line of eight characters, read left to right, typing or
+  drawing the sound of each one. See below.
 - **Write (ka → か)** — a sound appears, you draw the character with your finger,
   then tap **Show answer**. The real character appears behind your drawing as a
   hollow outline, so it stays clearly visible without hiding your own strokes,
@@ -305,6 +305,31 @@ and you come back to a new one.
 On a phone the keyboard covers the bottom half of the screen, so the line and
 the typing box sit right at the top where they stay in view. Tap the line if
 the keyboard has gone away and it comes back.
+
+### Type or Draw
+
+A switch under the line chooses how you answer. **Type** is everything above.
+**Draw** gives you a box to write the sound in by hand instead — `ka` written
+with your finger — and the app remembers which you used.
+
+A phone browser has no way to read handwriting, so in Draw you check yourself,
+the same as Write:
+
+- Write the sound of the outlined character and tap **Next**. The ones you
+  have done fade, and no answers show yet. **clear** wipes the box. Stuck?
+  Tap Next with nothing written.
+- After the eighth it says **Check**. Each drawing then comes back beside the
+  right answer, all ticked. Tap any you got wrong to cross it, and tap again
+  if you change your mind. A blank one is always a miss.
+- **Next train** counts them toward your progress and brings a new line.
+  Going back to the menu counts them too — nothing you checked is lost.
+
+The box is wider than it is tall, since a sound is a short word, with a dashed
+line to write along. Like every writing area in the app it sits 32 pixels in
+from the screen edges, so a stroke at the left cannot trigger Safari's swipe
+back.
+
+On a desktop: `space` for Next, `c` to clear.
 
 ## Exam
 

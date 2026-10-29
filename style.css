@@ -305,6 +305,80 @@ body {
 
 .train-result .btn { width: 100%; margin-bottom: 18px; }
 
+/* Type / Draw - small, like the switch in Copy. */
+.train-mode { flex: 0 0 auto; margin-top: 10px; padding: 3px; border-radius: 10px; }
+.train-mode .seg-btn { padding: 7px 4px; font-size: 13px; border-radius: 8px; }
+
+/* In Draw, the ones already written are faded - their answers come at the end. */
+.car.past .car-kana { opacity: .45; }
+
+/* The box to write the sound in. Wider than it is tall, since a sound is a
+   short word, with one dashed line to write along. Kept in from the screen
+   edges so a stroke at the left cannot trigger Safari's swipe back. */
+.train-pad {
+  position: relative;
+  flex: 0 0 auto;
+  aspect-ratio: 3 / 2;
+  margin: 12px 18px 0;
+  background-color: var(--card);
+  background-image: repeating-linear-gradient(to right, var(--line) 0 6px, transparent 6px 12px);
+  background-size: 100% 1px;
+  background-position: 0 68%;
+  background-repeat: no-repeat;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.train-pad canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+
+/* Sits at the bottom of the screen, under the thumb. */
+.train-draw-actions { margin-top: auto; }
+
+/* The check at the end: each drawing beside the right answer. */
+.train-check {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 14px;
+}
+
+.train-check .train-hint { margin: 0 0 12px; }
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 14px 6px 10px;
+  margin-bottom: 6px;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  touch-action: manipulation;
+}
+
+.check-kana { flex: 0 0 34px; font-family: var(--kana); font-size: 26px; text-align: center; }
+
+/* The same shape as the box you wrote in, so the drawing comes back as it was. */
+.check-ink {
+  position: relative;
+  flex: 0 0 84px;
+  aspect-ratio: 3 / 2;
+  background: var(--card-2);
+  border-radius: 8px;
+}
+
+.check-ink canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.check-answer { flex: 1 1 auto; font-size: 20px; font-weight: 700; }
+.check-mark { font-size: 20px; font-weight: 700; color: var(--good); }
+.check-row.wrong { border-color: var(--bad); }
+.check-row.wrong .check-mark { color: var(--bad); }
+
 /* ---------- write ---------- */
 .prompt-row { text-align: center; padding: 0 0 10px; flex: 0 0 auto; }
 .prompt-label { font-size: 13px; color: var(--dim); letter-spacing: .04em; }

@@ -17,6 +17,7 @@
     difficulty: 'easy',        // easy | medium | hard - where wrong answers come from
     writeOrder: 'random',      // random | list - how Write picks the next character
     copyRow: true,             // Copy a whole row at a time, rather than one character
+    trainDraw: false,          // Train by writing the sound by hand, rather than typing it
     exam: null,                // the exam in progress, or null
     examSeen: {},              // what this round of exams has already covered
     listIndex: 0,              // position through the chart when running in order
@@ -43,6 +44,7 @@
       state.examSeen = saved.examSeen || {};
       if (saved.volume) state.volume = saved.volume;
       if (typeof saved.copyRow === 'boolean') state.copyRow = saved.copyRow;
+      if (typeof saved.trainDraw === 'boolean') state.trainDraw = saved.trainDraw;
       return;
     }
 
@@ -64,7 +66,7 @@
       localStorage.setItem(STORE, JSON.stringify({
         off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id,
         combo: state.combo, wordRomaji: state.wordRomaji, examSeen: state.examSeen,
-        volume: state.volume, copyRow: state.copyRow
+        volume: state.volume, copyRow: state.copyRow, trainDraw: state.trainDraw
       }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
@@ -244,11 +246,13 @@
 
   function toHome() {
     endExam();
+    settleTrain();
     show('home');
   }
 
   function toMenu() {
     endExam();
+    settleTrain();
     show('menu');
     refreshMenu();
   }
@@ -490,7 +494,17 @@
   // A sound is checked when you press space or return, never letter by
   // letter. Checking as you type would give the answer away - a "k" that is
   // not marked wrong tells you the character is in the k row.
+  //
+  // Or, with Draw switched on, you write each sound by hand in a box. A phone
+  // browser cannot read handwriting, so you check those yourself: at the end
+  // of the line each drawing is shown beside the right answer, and you tap
+  // any you got wrong - the same idea as Write.
   var TRAIN_LENGTH = 8;
+
+  var TRAIN_HINT = {
+    type: 'Press space after each sound. Stuck on one? Press next (or Enter) with nothing typed and it shows you.',
+    draw: 'Write the sound of the outlined character, then Next. Stuck? Next with nothing written. You check them all at the end.'
+  };
 
   // Accepted as well as the spelling the app shows. These are the other usual
   // way of writing romaji, and what a Japanese keyboard on a computer takes
@@ -498,10 +512,14 @@
   var ALSO_SPELT = { shi: ['si'], chi: ['ti'], tsu: ['tu'], fu: ['hu'], ji: ['zi'], n: ['nn'] };
 
   var train = {
-    cars: [],          // one per character: { item, el, said, typed, correct }
+    cars: [],          // one per character: { item, el, said, typed, ink, correct }
     at: 0,             // which one is being answered
     started: 0,        // when the line appeared, for the time at the end
-    done: false
+    secs: 0,           // how long the line took
+    draw: false,       // this line is being drawn rather than typed
+    done: false,       // every character answered
+    settled: false,    // Draw only: your ticks and crosses have been counted
+    stroke: null       // Draw only: the line being drawn right now
   };
 
   var trainInput = $('trainInput');
@@ -527,6 +545,7 @@
   // Characters are chosen the same way as everywhere else - weighted toward
   // what you are weak on, and never the same one within three of itself.
   function newTrain() {
+    settleTrain();
     var line = $('trainLine');
     line.innerHTML = '';
     train.cars = [];
@@ -539,11 +558,20 @@
     train.at = 0;
     train.started = Date.now();
     train.done = false;
+    train.settled = false;
+    train.draw = state.trainDraw;
     trainInput.value = '';
+
+    var draw = train.draw;
+    $('trainForm').classList.toggle('hidden', draw);
+    $('trainPad').classList.toggle('hidden', !draw);
+    $('trainDrawActions').classList.toggle('hidden', !draw);
+    $('trainCheck').classList.add('hidden');
     $('trainResult').classList.add('hidden');
     $('trainHint').classList.remove('hidden');
+    $('trainHint').textContent = draw ? TRAIN_HINT.draw : TRAIN_HINT.type;
     markCar();
-    trainInput.focus();
+    if (draw) { requestAnimationFrame(sizeTrainPad); } else { trainInput.focus(); }
   }
 
   function makeCar(line, item) {
@@ -557,23 +585,22 @@
     el.appendChild(kana);
     el.appendChild(said);
     line.appendChild(el);
-    return { item: item, el: el, said: said, typed: '', correct: false };
+    return { item: item, el: el, said: said, typed: '', ink: [], correct: false };
   }
 
-  // Outline the one you are on.
+  // Outline the one you are on. In Draw, the ones already written are faded,
+  // since their answers do not show until the end.
   function markCar() {
     train.cars.forEach(function (car, i) {
       car.el.classList.toggle('now', i === train.at && !train.done);
+      car.el.classList.toggle('past', train.draw && !train.done && i < train.at);
     });
+    var last = train.at === train.cars.length - 1;
+    $('trainDrawLabel').textContent = train.done ? 'Next train ›' : last ? 'Check ›' : 'Next ›';
   }
 
-  function answerCar(typed) {
-    var car = train.cars[train.at];
-    car.typed = typed;
-    car.correct = answersFor(car.item).indexOf(typed.toLowerCase()) !== -1;
-    car.said.textContent = car.item.romaji;           // right or wrong, show the answer
-    car.el.classList.add(car.correct ? 'right' : 'wrong');
-
+  // Count one answer toward your progress.
+  function scoreCar(car) {
     var s = stat(car.item.kana);
     s.seen++;
     state.total++;
@@ -583,6 +610,16 @@
     } else {
       s.wrong++;
     }
+  }
+
+  function answerCar(typed) {
+    var car = train.cars[train.at];
+    car.typed = typed;
+    car.correct = answersFor(car.item).indexOf(typed.toLowerCase()) !== -1;
+    car.said.textContent = car.item.romaji;           // right or wrong, show the answer
+    car.el.classList.add(car.correct ? 'right' : 'wrong');
+
+    scoreCar(car);
     updateScore();
     save();
 
@@ -653,8 +690,181 @@
   });
 
   // Tapping the line brings the keyboard back if it has been put away.
-  $('trainLine').addEventListener('click', function () { trainInput.focus(); });
+  $('trainLine').addEventListener('click', function () {
+    if (!train.draw) trainInput.focus();
+  });
   $('trainNext').addEventListener('click', newTrain);
+
+  // ----- train: drawing the sound -----
+  // Strokes are kept as fractions of the box, the same as Copy, so the check at
+  // the end can draw them again in a smaller box of the same shape.
+  var trainCanvas = $('trainCanvas');
+
+  function sizeTrainPad() {
+    fitCanvas(trainCanvas);
+    var car = train.cars[train.at];
+    paint(trainCanvas, car && !train.done ? car.ink : []);
+  }
+
+  function clearTrainPad() {
+    if (train.done) return;
+    train.cars[train.at].ink = [];
+    paint(trainCanvas, []);
+  }
+
+  // The big button: on to the next character, then to the check, then a new
+  // line once you have checked it.
+  function trainDrawNext() {
+    if (train.done) { newTrain(); return; }
+    train.at++;
+    if (train.at >= train.cars.length) { checkDrawn(); return; }
+    paint(trainCanvas, []);
+    markCar();
+  }
+
+  // Each drawing beside the right answer. They start out ticked, and a tap
+  // switches one to a miss and back. Anything left blank is a miss, as there
+  // is nothing there that could be right.
+  function checkDrawn() {
+    train.done = true;
+    train.secs = (Date.now() - train.started) / 1000;
+    markCar();
+
+    var box = $('trainCheck');
+    box.innerHTML = '';
+    var score = document.createElement('div');
+    score.className = 'train-score';
+    var tip = document.createElement('p');
+    tip.className = 'train-hint';
+    tip.textContent = 'Tap any you got wrong.';
+    box.appendChild(score);
+    box.appendChild(tip);
+
+    train.cars.forEach(function (car) {
+      car.correct = car.ink.length > 0;
+      car.said.textContent = car.item.romaji;
+
+      var row = document.createElement('button');
+      row.className = 'check-row';
+      var kana = document.createElement('span');
+      kana.className = 'check-kana';
+      kana.textContent = car.item.kana;
+      var ink = document.createElement('span');
+      ink.className = 'check-ink';
+      var canvas = document.createElement('canvas');
+      ink.appendChild(canvas);
+      var answer = document.createElement('span');
+      answer.className = 'check-answer';
+      answer.textContent = labelText(car.item);
+      var mark = document.createElement('span');
+      mark.className = 'check-mark';
+      row.appendChild(kana);
+      row.appendChild(ink);
+      row.appendChild(answer);
+      row.appendChild(mark);
+      box.appendChild(row);
+
+      car.row = row;
+      car.mark = mark;
+      car.canvas = canvas;
+      row.addEventListener('click', function () {
+        if (!car.ink.length) return;
+        car.correct = !car.correct;
+        showMarks(score);
+      });
+    });
+    showMarks(score);
+
+    $('trainPad').classList.add('hidden');
+    $('trainHint').classList.add('hidden');
+    box.classList.remove('hidden');
+    box.scrollTop = 0;
+    requestAnimationFrame(function () {
+      train.cars.forEach(function (car) {
+        fitCanvas(car.canvas);
+        paint(car.canvas, car.ink);
+      });
+    });
+  }
+
+  function showMarks(score) {
+    var right = 0;
+    train.cars.forEach(function (car) {
+      if (car.correct) right++;
+      car.el.classList.toggle('right', car.correct);
+      car.el.classList.toggle('wrong', !car.correct);
+      car.row.classList.toggle('wrong', !car.correct);
+      car.mark.textContent = !car.ink.length ? 'blank' : car.correct ? '✓' : '✗';
+    });
+    score.textContent = right + ' of ' + train.cars.length + ' right  ·  ' +
+      train.secs.toFixed(1) + ' seconds';
+  }
+
+  // Your ticks and crosses count toward progress once you move on - to the
+  // next line, back to the menu, or to the other mode - so you can change
+  // your mind about any of them until then.
+  function settleTrain() {
+    if (!train.draw || !train.done || train.settled) return;
+    train.settled = true;
+    train.cars.forEach(scoreCar);
+    updateScore();
+    save();
+  }
+
+  function trainPoint(e) {
+    var r = trainCanvas.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
+  }
+
+  trainCanvas.addEventListener('pointerdown', function (e) {
+    if (train.done) return;
+    e.preventDefault();
+    if (trainCanvas.setPointerCapture) { try { trainCanvas.setPointerCapture(e.pointerId); } catch (err) {} }
+    var ink = train.cars[train.at].ink;
+    train.stroke = [trainPoint(e)];
+    ink.push(train.stroke);
+    paint(trainCanvas, ink);
+  });
+
+  // Only the newest piece of line is drawn while the finger moves.
+  trainCanvas.addEventListener('pointermove', function (e) {
+    if (!train.stroke) return;
+    e.preventDefault();
+    var last = train.stroke[train.stroke.length - 1];
+    var p = trainPoint(e);
+    train.stroke.push(p);
+    var ctx = trainCanvas.getContext('2d'), w = trainCanvas.width, h = trainCanvas.height;
+    ctx.beginPath();
+    ctx.moveTo(last[0] * w, last[1] * h);
+    ctx.lineTo(p[0] * w, p[1] * h);
+    ctx.stroke();
+  });
+
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (evt) {
+    trainCanvas.addEventListener(evt, function () { train.stroke = null; });
+  });
+
+  noEdgeSwipe(trainCanvas);
+
+  // Type or Draw. Switching starts a fresh line; the choice is remembered.
+  function setTrainDraw(on) {
+    state.trainDraw = on;
+    $('trainType').classList.toggle('on', !on);
+    $('trainDraw').classList.toggle('on', on);
+    save();
+  }
+
+  function switchTrain(on) {
+    if (on === state.trainDraw) return;
+    settleTrain();
+    setTrainDraw(on);
+    newTrain();
+  }
+
+  $('trainType').addEventListener('click', function () { switchTrain(false); });
+  $('trainDraw').addEventListener('click', function () { switchTrain(true); });
+  $('trainClear').addEventListener('click', clearTrainPad);
+  $('trainDrawNext').addEventListener('click', trainDrawNext);
 
   // ---------- write ----------
   var pad = $('pad'), ctx = pad.getContext('2d');
@@ -2040,6 +2250,11 @@
     }
     if (state.screen === 'train') {
       if (e.key === 'Escape') { toMenu(); return; }
+      if (train.draw) {
+        if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); trainDrawNext(); }
+        else if (e.key === 'c') { e.preventDefault(); clearTrainPad(); }
+        return;
+      }
       // After a click somewhere else on a desktop, typing still goes in the box.
       if (document.activeElement !== trainInput && e.key.length === 1) trainInput.focus();
       return;
@@ -2090,12 +2305,14 @@
   window.addEventListener('resize', function () {
     if (state.screen === 'write') sizePad();
     if (state.screen === 'copy') sizeCopy();
+    if (state.screen === 'train' && train.draw) sizeTrainPad();
   });
 
   window.addEventListener('orientationchange', function () {
     setTimeout(function () {
       if (state.screen === 'write') sizePad();
       if (state.screen === 'copy') sizeCopy();
+      if (state.screen === 'train' && train.draw) sizeTrainPad();
     }, 250);
   });
 
@@ -2105,6 +2322,7 @@
   setWordRomaji(state.wordRomaji);
   setVolume(state.volume);
   setCopyRow(state.copyRow);
+  setTrainDraw(state.trainDraw);
   updateScore();
   toHome();
 })();
