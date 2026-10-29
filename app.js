@@ -212,6 +212,7 @@
     home: $('homeScreen'),
     menu: $('menuScreen'),
     read: $('readScreen'),
+    train: $('trainScreen'),
     write: $('writeScreen'),
     copy: $('copyScreen'),
     picker: $('pickerScreen'),
@@ -232,6 +233,9 @@
 
   // ---------- screens ----------
   function show(name) {
+    // A box being typed in keeps the phone keyboard up even after its screen
+    // is hidden, so let go of it whenever the screen changes.
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     state.screen = name;
     Object.keys(screens).forEach(function (key) {
       screens[key].classList.toggle('hidden', key !== name);
@@ -332,6 +336,7 @@
     $('pickerCount').textContent = on + ' of ' + current.kana.length + ' characters  ·  ' +
       state.difficulty.charAt(0).toUpperCase() + state.difficulty.slice(1);
     $('goRead').disabled = on === 0;
+    $('goTrain').disabled = on === 0;
     $('goWrite').disabled = on === 0;
     $('goList').disabled = on === 0;
     $('goCopy').disabled = on === 0;
@@ -393,6 +398,7 @@
   });
 
   $('goRead').addEventListener('click', function () { startPractice('read'); });
+  $('goTrain').addEventListener('click', startTrain);
   $('goWrite').addEventListener('click', function () { startWrite('random'); });
   $('goList').addEventListener('click', function () { startWrite('list'); });
   $('goCopy').addEventListener('click', startCopy);
@@ -474,6 +480,181 @@
       if (state.screen === 'read') nextRead();
     }, correct ? 450 : 1500);
   }
+
+  // ---------- train ----------
+  // A line of characters - the train - read from left to right, typing the
+  // sound of each one. Typing rather than tapping: with four buttons to choose
+  // from you only have to recognise the answer, here you have to come up with
+  // it yourself.
+  //
+  // A sound is checked when you press space or return, never letter by
+  // letter. Checking as you type would give the answer away - a "k" that is
+  // not marked wrong tells you the character is in the k row.
+  var TRAIN_LENGTH = 8;
+
+  // Accepted as well as the spelling the app shows. These are the other usual
+  // way of writing romaji, and what a Japanese keyboard on a computer takes
+  // too: し typed as "si", つ as "tu", and so on.
+  var ALSO_SPELT = { shi: ['si'], chi: ['ti'], tsu: ['tu'], fu: ['hu'], ji: ['zi'], n: ['nn'] };
+
+  var train = {
+    cars: [],          // one per character: { item, el, said, typed, correct }
+    at: 0,             // which one is being answered
+    started: 0,        // when the line appeared, for the time at the end
+    done: false
+  };
+
+  var trainInput = $('trainInput');
+
+  // Every spelling that counts as right. を takes "wo" or "o", ぢ "di" or "ji".
+  function answersFor(item) {
+    var out = [item.romaji];
+    if (item.sound) out.push(item.sound);
+    out.slice().forEach(function (s) { out = out.concat(ALSO_SPELT[s] || []); });
+    return out;
+  }
+
+  function startTrain() {
+    if (!pool().length) return;
+    state.right = 0;
+    state.total = 0;
+    forgetRecent();
+    updateScore();
+    show('train');
+    newTrain();
+  }
+
+  // Characters are chosen the same way as everywhere else - weighted toward
+  // what you are weak on, and never the same one within three of itself.
+  function newTrain() {
+    var line = $('trainLine');
+    line.innerHTML = '';
+    train.cars = [];
+    for (var i = 0; i < TRAIN_LENGTH; i++) {
+      var item = pick();
+      if (!item) { toMenu(); return; }
+      remember(item.kana);
+      train.cars.push(makeCar(line, item));
+    }
+    train.at = 0;
+    train.started = Date.now();
+    train.done = false;
+    trainInput.value = '';
+    $('trainResult').classList.add('hidden');
+    $('trainHint').classList.remove('hidden');
+    markCar();
+    trainInput.focus();
+  }
+
+  function makeCar(line, item) {
+    var el = document.createElement('div');
+    el.className = 'car';
+    var kana = document.createElement('span');
+    kana.className = 'car-kana';
+    kana.textContent = item.kana;
+    var said = document.createElement('span');     // what you typed, then the answer
+    said.className = 'car-said';
+    el.appendChild(kana);
+    el.appendChild(said);
+    line.appendChild(el);
+    return { item: item, el: el, said: said, typed: '', correct: false };
+  }
+
+  // Outline the one you are on.
+  function markCar() {
+    train.cars.forEach(function (car, i) {
+      car.el.classList.toggle('now', i === train.at && !train.done);
+    });
+  }
+
+  function answerCar(typed) {
+    var car = train.cars[train.at];
+    car.typed = typed;
+    car.correct = answersFor(car.item).indexOf(typed.toLowerCase()) !== -1;
+    car.said.textContent = car.item.romaji;           // right or wrong, show the answer
+    car.el.classList.add(car.correct ? 'right' : 'wrong');
+
+    var s = stat(car.item.kana);
+    s.seen++;
+    state.total++;
+    if (car.correct) {
+      state.right++;
+      if (s.wrong > 0) s.wrong--;          // a right answer pays down the penalty
+    } else {
+      s.wrong++;
+    }
+    updateScore();
+    save();
+
+    train.at++;
+    if (train.at >= train.cars.length) { finishTrain(); } else { markCar(); }
+  }
+
+  // The line stays up with every answer under it, plus the score, the time,
+  // and what was typed for each one that was missed.
+  function finishTrain() {
+    train.done = true;
+    markCar();
+
+    var right = train.cars.filter(function (car) { return car.correct; }).length;
+    var secs = (Date.now() - train.started) / 1000;
+    $('trainScore').textContent = right + ' of ' + train.cars.length + ' right  ·  ' +
+      secs.toFixed(1) + ' seconds';
+
+    var missed = $('trainMissed');
+    missed.innerHTML = '';
+    var wrong = train.cars.filter(function (car) { return !car.correct; });
+    if (wrong.length) {
+      var head = document.createElement('div');
+      head.className = 'exam-missed-head';
+      head.textContent = 'Missed';
+      missed.appendChild(head);
+      wrong.forEach(function (car) {
+        var note = car.typed ? 'you typed ' + car.typed : 'you skipped it';
+        missed.appendChild(examRow(car.item.kana, labelText(car.item) + '  ·  ' + note, 'exam-kana'));
+      });
+    }
+
+    $('trainHint').classList.add('hidden');
+    $('trainResult').classList.remove('hidden');
+  }
+
+  // Everything typed comes through here. A space ends a sound, and whatever
+  // follows it is the start of the next one - so "ka ki ku " answers three in
+  // a row, however fast it is typed.
+  //
+  // The box is only rewritten when a space has actually arrived. Phone
+  // keyboards build each word up as you type, and changing the box under
+  // them part way through can make letters appear twice.
+  trainInput.addEventListener('input', function () {
+    if (state.screen !== 'train') return;
+    if (train.done) { trainInput.value = ''; return; }
+
+    var parts = trainInput.value.split(/[^A-Za-z]+/);
+    var rest = parts.pop();                  // the sound still being typed
+    if (parts.length) {
+      parts.forEach(function (typed) {
+        if (typed && !train.done) answerCar(typed);
+      });
+      trainInput.value = train.done ? '' : rest;
+    }
+    if (!train.done) train.cars[train.at].said.textContent = rest.toLowerCase();
+  });
+
+  // Return ends a sound the same as space. With nothing typed it means "I
+  // don't know", which shows the answer and moves on. Once the line is
+  // finished, it brings the next one.
+  $('trainForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (train.done) { newTrain(); return; }
+    var typed = trainInput.value.replace(/[^A-Za-z]/g, '');
+    trainInput.value = '';
+    answerCar(typed);
+  });
+
+  // Tapping the line brings the keyboard back if it has been put away.
+  $('trainLine').addEventListener('click', function () { trainInput.focus(); });
+  $('trainNext').addEventListener('click', newTrain);
 
   // ---------- write ----------
   var pad = $('pad'), ctx = pad.getContext('2d');
@@ -1225,6 +1406,9 @@
       show('write');
       nextWrite();
       requestAnimationFrame(sizePad);
+    } else if (state.chartFrom === 'train') {
+      show('train');
+      newTrain();
     } else {
       show('read');
       nextRead();
@@ -1852,6 +2036,12 @@
       if (!revealed && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); revealSentence(); }
       else if (revealed && (e.key === 'y' || e.key === 'ArrowRight' || e.key === 'Enter')) { e.preventDefault(); gradeSentence(true); }
       else if (revealed && (e.key === 'n' || e.key === 'ArrowLeft')) { e.preventDefault(); gradeSentence(false); }
+      return;
+    }
+    if (state.screen === 'train') {
+      if (e.key === 'Escape') { toMenu(); return; }
+      // After a click somewhere else on a desktop, typing still goes in the box.
+      if (document.activeElement !== trainInput && e.key.length === 1) trainInput.focus();
       return;
     }
     if (state.screen === 'copy') {

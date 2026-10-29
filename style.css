@@ -220,6 +220,91 @@ body {
   color: var(--dim);
 }
 
+/* ---------- train ---------- */
+/* One line of carriages, however many there are, all the same width. Kept at
+   the top of the screen with the typing box right under it, because the phone
+   keyboard covers the bottom half - anything lower would be scrolled away. */
+.train-line {
+  flex: 0 0 auto;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 5px;
+  padding: 12px 0 4px;
+}
+
+.car {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.car-kana { font-family: var(--kana); font-size: clamp(22px, 7.4vw, 34px); line-height: 1.1; }
+
+/* What you are typing, then the answer once it is checked. */
+.car-said {
+  min-height: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--dim);
+}
+
+.car.now { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.car.right .car-said { color: var(--good); }
+.car.wrong { border-color: var(--bad); }
+.car.wrong .car-said { color: var(--bad); }
+
+.train-form { flex: 0 0 auto; margin-top: 12px; }
+
+.train-input {
+  width: 100%;
+  padding: 14px 16px;
+  font: inherit;
+  /* 16px or more - any smaller and an iPhone zooms the page in when it is tapped */
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  /* The page switches text selection off. In Safari that also stops you
+     typing into a box, so it is switched back on here. */
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.train-input::placeholder { font-size: 16px; font-weight: 400; color: var(--dim); }
+
+.train-hint { flex: 0 0 auto; margin: 10px 4px 0; font-size: 13px; line-height: 1.5; color: var(--dim); text-align: center; }
+
+.train-result {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 14px;
+}
+
+.train-score {
+  margin-bottom: 12px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.train-result .btn { width: 100%; margin-bottom: 18px; }
+
 /* ---------- write ---------- */
 .prompt-row { text-align: center; padding: 0 0 10px; flex: 0 0 auto; }
 .prompt-label { font-size: 13px; color: var(--dim); letter-spacing: .04em; }
@@ -495,8 +580,8 @@ body {
 #homeScreen .menu-btn { padding: 20px 18px; }
 #homeScreen .menu-choices { gap: 12px; }
 
-/* Five practice modes is more than a phone fits at full size. Slimmer buttons
-   get four on screen with the fifth peeking in at the bottom, which is the
+/* Six practice modes is more than a phone fits at full size. Slimmer buttons
+   get four on screen with the next one peeking in at the bottom, which is the
    clue that the list scrolls. */
 #menuScreen .menu-choices { gap: 10px; }
 #menuScreen .menu-btn { padding: 14px 18px; border-radius: 16px; }

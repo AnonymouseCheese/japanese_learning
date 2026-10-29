@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=28">
+<link rel="stylesheet" href="style.css?v=29">
 </head>
 <body>
 
@@ -87,6 +87,11 @@
       <span class="menu-btn-main">Identify</span>
       <span class="menu-btn-sub">See the character, choose the sound</span>
     </button>
+    <button id="goTrain" class="menu-btn">
+      <span class="menu-btn-kana">ね か し と → ne ka shi to</span>
+      <span class="menu-btn-main">Train</span>
+      <span class="menu-btn-sub">Read a line of characters, type each sound</span>
+    </button>
     <button id="goWrite" class="menu-btn">
       <span class="menu-btn-kana">ka → か</span>
       <span class="menu-btn-main">Write</span>
@@ -139,6 +144,32 @@
   </div>
   <div id="choices" class="choices"></div>
   <div id="readFeedback" class="feedback"></div>
+</section>
+
+<!-- ===== TRAIN ===== -->
+<!-- A line of characters, read left to right, typing the sound of each one.
+     The carriages are added by app.js. Everything sits at the top of the
+     screen, because on a phone the keyboard covers the bottom half. -->
+<section id="trainScreen" class="screen hidden">
+  <header class="bar">
+    <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
+    <span class="bar-title">Train</span>
+    <span class="bar-actions"><button class="mini" data-chart>chart</button></span>
+    <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
+  </header>
+  <div id="trainLine" class="train-line"></div>
+  <form id="trainForm" class="train-form">
+    <input id="trainInput" class="train-input" type="text" placeholder="type the sound"
+      autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+      enterkeyhint="next" aria-label="The sound of the highlighted character">
+  </form>
+  <p id="trainHint" class="train-hint">Press space after each sound. Stuck on one?
+  Press next (or Enter) with nothing typed and it shows you.</p>
+  <div id="trainResult" class="train-result hidden">
+    <div id="trainScore" class="train-score"></div>
+    <button id="trainNext" class="btn btn-primary">Next train<span class="hint">enter</span></button>
+    <div id="trainMissed" class="exam-missed"></div>
+  </div>
 </section>
 
 <!-- ===== WRITE ===== -->
@@ -344,9 +375,9 @@
   </div>
 </section>
 
-<script src="data.js?v=28"></script>
-<script src="words.js?v=28"></script>
-<script src="sentences.js?v=28"></script>
-<script src="app.js?v=28"></script>
+<script src="data.js?v=29"></script>
+<script src="words.js?v=29"></script>
+<script src="sentences.js?v=29"></script>
+<script src="app.js?v=29"></script>
 </body>
 </html>

@@ -16,8 +16,8 @@ The app opens on a **set chooser**:
 - **Combination** — several sets mixed together.
 - **Sentences** — whole sentences, and the particles that hold them together.
 
-Each one opens the same menu of five practice modes — **Identify**, **Write**,
-**List**, **Copy** and **Words** — plus an **Exam**.
+Each one opens the same menu of six practice modes — **Identify**, **Train**,
+**Write**, **List**, **Copy** and **Words** — plus an **Exam**.
 
 ## Combination
 
@@ -122,7 +122,7 @@ It is deliberately limited to three places:
 - **Copy**, where tapping the big character says it. Nothing there is being
   tested, so the sound gives nothing away — the same reasoning as the chart.
 
-Not in Identify, Write or List. In Identify the sound *is* the answer. In Write
+Not in Identify, Train, Write or List. In Identify and Train the sound *is* the answer. In Write
 and List it would be tempting, but single isolated kana are where synthesised
 speech is least reliable — を alone is read as "wo" rather than "o", ん barely
 registers, and ぢ and づ come out identical to じ and ず. Whole words give the
@@ -171,6 +171,8 @@ Every other character just shows its romaji.
 - **Identify (か → ka)** — a character appears, you tap the sound it makes. The three
   wrong answers are picked from look-alike characters and the same row, so it
   stays hard rather than guessable.
+- **Train** — a line of eight characters, read left to right, typing the sound
+  of each one. See below.
 - **Write (ka → か)** — a sound appears, you draw the character with your finger,
   then tap **Show answer**. The real character appears behind your drawing as a
   hollow outline, so it stays clearly visible without hiding your own strokes,
@@ -260,6 +262,49 @@ free to use and share under the SIL Open Font License; the licence is in
 
 On a desktop: `space` for Done, `→` and `←` to skip between rows or characters, `c` to
 clear.
+
+## Train
+
+A line of eight characters — the train — to read from left to right, the way
+you would read a line of real text. You **type** the sound of each one rather
+than picking it from buttons. With four buttons you only have to recognise the
+answer when you see it; typing makes you come up with it yourself.
+
+```
+ ね   か   し   と   み   う   せ   ろ
+ ne   ka   shi  t                          <- you are typing "to"
+```
+
+- Type the sound and press **space**. The character you are on is outlined,
+  and the next one lights up. You can type straight through — `ne ka shi to `
+  answers four in a row, however fast it goes in.
+- Each answer is checked when you press space, not letter by letter. Checking
+  as you type would give it away: a `k` that is not marked wrong tells you the
+  character is in the k row.
+- Right answers turn green, wrong ones red, and either way the correct sound
+  appears under the character.
+- **Don't know one?** Press return (labelled **next** on a phone keyboard) with
+  nothing typed, and it shows you the answer and moves on. It counts as a miss.
+- At the end of the line you get the score, how many seconds it took, and the
+  ones you missed with what you typed for each. Return, or **Next train**,
+  brings another line.
+
+A few sounds have a second common spelling, and both are accepted: `shi`/`si`,
+`chi`/`ti`, `tsu`/`tu`, `fu`/`hu`, `ji`/`zi`, `n`/`nn`, and the characters
+already shown two ways — を `wo` or `o`, ぢ `di` or `ji`, づ `du` or `zu`.
+Capitals do not matter.
+
+Characters are chosen the same way as Identify: weighted toward what you are
+weak on, never the same one within three of itself, and following the
+character picker. Every answer feeds your progress, so a miss here brings the
+character up more often everywhere else.
+
+The **chart** button works as it does in Identify: opening it abandons the line
+and you come back to a new one.
+
+On a phone the keyboard covers the bottom half of the screen, so the line and
+the typing box sit right at the top where they stay in view. Tap the line if
+the keyboard has gone away and it comes back.
 
 ## Exam
 
