@@ -19,6 +19,8 @@
     copyRow: true,             // Copy a whole row at a time, rather than one character
     trainDraw: false,          // Train by writing the sound by hand, rather than typing it
     trainEach: false,          // in Draw, check each one straight away rather than at the end
+    trainNonstop: false,       // Train keeps going, rather than stopping after a line of 8
+    trainSpeed: { type: 20, draw: 6 },   // non-stop speed, characters a minute - drawing is slower
     exam: null,                // the exam in progress, or null
     examSeen: {},              // what this round of exams has already covered
     listIndex: 0,              // position through the chart when running in order
@@ -47,6 +49,12 @@
       if (typeof saved.copyRow === 'boolean') state.copyRow = saved.copyRow;
       if (typeof saved.trainDraw === 'boolean') state.trainDraw = saved.trainDraw;
       if (typeof saved.trainEach === 'boolean') state.trainEach = saved.trainEach;
+      if (typeof saved.trainNonstop === 'boolean') state.trainNonstop = saved.trainNonstop;
+      if (saved.trainSpeed) {
+        ['type', 'draw'].forEach(function (k) {
+          if (typeof saved.trainSpeed[k] === 'number') state.trainSpeed[k] = saved.trainSpeed[k];
+        });
+      }
       return;
     }
 
@@ -69,7 +77,7 @@
         off: state.off, stats: state.stats, difficulty: state.difficulty, set: current.id,
         combo: state.combo, wordRomaji: state.wordRomaji, examSeen: state.examSeen,
         volume: state.volume, copyRow: state.copyRow, trainDraw: state.trainDraw,
-        trainEach: state.trainEach
+        trainEach: state.trainEach, trainNonstop: state.trainNonstop, trainSpeed: state.trainSpeed
       }));
     } catch (e) { /* private browsing - just don't persist */ }
   }
@@ -500,15 +508,21 @@
   //
   // Or, with Draw switched on, you write each sound by hand in a box. A phone
   // browser cannot read handwriting, so you check those yourself - the same
-  // idea as Write. Either one by one, the answer appearing behind your
-  // writing as soon as you have done it, or all at the end of the line, each
-  // drawing beside its answer and a tap on any you got wrong.
+  // idea as Write. Either one by one, the answer appearing above the box as
+  // soon as you have written it, or all at the end of the line, each drawing
+  // beside its answer and a tap on any you got wrong.
+  //
+  // A line is eight characters - or, with Non-stop, the train keeps coming,
+  // sliding from right to left, and you answer each one before it reaches
+  // the left edge. See "train: non-stop" below.
   var TRAIN_LENGTH = 8;
 
   var TRAIN_HINT = {
     type: 'Press space after each sound. Stuck on one? Press next (or Enter) with nothing typed and it shows you.',
     draw: 'Write the sound of the outlined character, then Next. Stuck? Next with nothing written. You check them all at the end.',
-    each: 'Write the sound, then Check to see the answer. Stuck? Check with nothing written.'
+    each: 'Write the sound, then Check to see the answer. Stuck? Check with nothing written.',
+    moveType: 'Type each sound before it reaches the left. Right answers speed the train up, misses slow it down.',
+    moveDraw: 'Write each sound and Check before it reaches the left. The train waits while you mark it.'
   };
 
   // Accepted as well as the spelling the app shows. These are the other usual
@@ -526,7 +540,13 @@
     revealed: false,   // one by one: the answer is showing, waiting for got it / missed it
     done: false,       // every character answered
     settled: false,    // Draw only: your ticks and crosses have been counted
-    stroke: null       // Draw only: the line being drawn right now
+    stroke: null,      // Draw only: the line being drawn right now
+    nonstop: false,    // this train keeps coming rather than stopping at 8
+    speed: 0,          // non-stop: characters a minute
+    width: 0,          // non-stop: the width of the track, in pixels
+    step: 0,           // non-stop: one carriage and the gap after it, in pixels
+    last: 0,           // non-stop: the time of the last frame
+    raf: 0             // non-stop: the next frame, so it can be cancelled
   };
 
   var trainInput = $('trainInput');
@@ -553,27 +573,31 @@
   // what you are weak on, and never the same one within three of itself.
   function newTrain() {
     settleTrain();
+    stopMoving();
+    if (!pool().length) { toMenu(); return; }
     var line = $('trainLine');
     line.innerHTML = '';
+    line.style.height = '';
     train.cars = [];
-    for (var i = 0; i < TRAIN_LENGTH; i++) {
-      var item = pick();
-      if (!item) { toMenu(); return; }
-      remember(item.kana);
-      train.cars.push(makeCar(line, item));
-    }
     train.at = 0;
+    train.nonstop = state.trainNonstop;
+    line.classList.toggle('moving', train.nonstop);
+    if (!train.nonstop) {
+      for (var i = 0; i < TRAIN_LENGTH; i++) addCar();
+    }
     train.started = Date.now();
     train.done = false;
     train.settled = false;
     train.draw = state.trainDraw;
-    train.each = train.draw && state.trainEach;
+    // A train that never stops has no end to check at, so non-stop Draw is
+    // always one by one.
+    train.each = train.draw && (state.trainEach || train.nonstop);
     train.revealed = false;
     trainInput.value = '';
 
     var draw = train.draw;
     $('trainForm').classList.toggle('hidden', draw);
-    $('trainCheckMode').classList.toggle('hidden', !draw);
+    $('trainCheckMode').classList.toggle('hidden', !draw || train.nonstop);
     $('trainPad').classList.toggle('hidden', !draw);
     $('trainDrawActions').classList.toggle('hidden', !draw);
     $('trainClear').classList.remove('hidden');
@@ -582,8 +606,20 @@
     $('trainResult').classList.add('hidden');
     $('trainHint').classList.remove('hidden');
     trainHintText();
+    if (train.nonstop) startMoving();
+    showSpeed();
     markCar();
     if (draw) { requestAnimationFrame(sizeTrainPad); } else { trainInput.focus(); }
+  }
+
+  // The next character onto the end of the train.
+  function addCar() {
+    var item = pick();
+    if (!item) return null;
+    remember(item.kana);
+    var car = makeCar($('trainLine'), item);
+    train.cars.push(car);
+    return car;
   }
 
   function makeCar(line, item) {
@@ -624,6 +660,7 @@
     } else {
       s.wrong++;
     }
+    if (train.nonstop) changeSpeed(car.correct);
   }
 
   function answerCar(typed) {
@@ -638,6 +675,7 @@
     save();
 
     train.at++;
+    if (train.nonstop) { fillTrack(); markCar(); return; }
     if (train.at >= train.cars.length) { finishTrain(); } else { markCar(); }
   }
 
@@ -832,7 +870,8 @@
     var car = train.cars[train.at];
     hint.classList.toggle('train-answer', train.revealed);
     hint.textContent = train.revealed ? car.item.kana + ' = ' + labelText(car.item)
-      : !train.draw ? TRAIN_HINT.type
+      : !train.draw ? (train.nonstop ? TRAIN_HINT.moveType : TRAIN_HINT.type)
+      : train.nonstop ? TRAIN_HINT.moveDraw
       : train.each ? TRAIN_HINT.each : TRAIN_HINT.draw;
   }
 
@@ -867,7 +906,12 @@
     $('trainDrawActions').classList.remove('hidden');
 
     train.at++;
-    if (train.at >= train.cars.length) { finishTrain(); return; }
+    if (train.nonstop) {
+      fillTrack();
+    } else if (train.at >= train.cars.length) {
+      finishTrain();
+      return;
+    }
     paint(trainCanvas, []);
     markCar();
   }
@@ -948,14 +992,164 @@
     newTrain();
   }
 
+  // A line of 8, or non-stop. Remembered the same way.
+  function setTrainNonstop(on) {
+    state.trainNonstop = on;
+    $('trainEight').classList.toggle('on', !on);
+    $('trainNonstop').classList.toggle('on', on);
+    save();
+  }
+
+  function switchTrainNonstop(on) {
+    if (on === state.trainNonstop) return;
+    settleTrain();
+    setTrainNonstop(on);
+    newTrain();
+  }
+
   $('trainType').addEventListener('click', function () { switchTrain(false); });
   $('trainDraw').addEventListener('click', function () { switchTrain(true); });
+  $('trainEight').addEventListener('click', function () { switchTrainNonstop(false); });
+  $('trainNonstop').addEventListener('click', function () { switchTrainNonstop(true); });
   $('trainEach').addEventListener('click', function () { switchTrainEach(true); });
   $('trainAtEnd').addEventListener('click', function () { switchTrainEach(false); });
   $('trainGot').addEventListener('click', function () { gradeDrawn(true); });
   $('trainMissed').addEventListener('click', function () { gradeDrawn(false); });
   $('trainClear').addEventListener('click', clearTrainPad);
   $('trainDrawNext').addEventListener('click', trainDrawNext);
+
+  // ----- train: non-stop -----
+  // The carriages slide from right to left without stopping, and new ones
+  // keep arriving on the right. The outlined one is the first you have not
+  // answered yet; if it reaches the left edge before you answer it, it is a
+  // miss, and its answer shows in red as it slides away.
+  //
+  // There is no speed setting. Every right answer makes the train a little
+  // faster and every miss slows it down, so it settles at whatever pace you
+  // can keep up with. The speed is remembered, separately for typing and
+  // drawing, so you start where you left off.
+  var TRAIN_FASTER = 1.05;     // after a right answer
+  var TRAIN_SLOWER = 0.85;     // after a miss - a miss counts for more, so it recovers quickly
+  var TRAIN_SLOWEST = 3;       // characters a minute
+  var TRAIN_FASTEST = 90;
+  var CAR_GAP = 5;             // the gap between carriages - the same as in style.css
+
+  function startMoving() {
+    train.speed = state.trainSpeed[train.draw ? 'draw' : 'type'];
+    measureTrack();
+    // The left of the track starts empty, so there is time to read the first.
+    fillTrack(train.step * 3);
+    sizeTrack();
+    placeCars();
+    train.last = 0;
+    train.raf = requestAnimationFrame(tick);
+  }
+
+  function stopMoving() {
+    if (train.raf) cancelAnimationFrame(train.raf);
+    train.raf = 0;
+  }
+
+  // Carriages are the same size as in a line of 8: eight to the width.
+  function measureTrack() {
+    train.width = $('trainLine').clientWidth;
+    train.step = (train.width + CAR_GAP) / TRAIN_LENGTH;
+  }
+
+  // The carriages are placed by hand, so the track needs telling how tall one is.
+  function sizeTrack() {
+    var car = train.cars[0];
+    if (car) $('trainLine').style.height = (car.el.offsetHeight + 4) + 'px';
+  }
+
+  // Keep the track full: one carriage after another out to the right-hand
+  // edge, and always one you have not answered yet.
+  function fillTrack(startX) {
+    var last = train.cars[train.cars.length - 1];
+    var x = last ? last.x + train.step : (startX || 0);
+    while (x < train.width || train.at >= train.cars.length) {
+      var car = addCar();
+      if (!car) return;
+      car.x = x;
+      car.el.style.width = (train.step - CAR_GAP) + 'px';
+      x += train.step;
+    }
+  }
+
+  // The one you are on goes red as it nears the end - a warning to hurry.
+  function placeCars() {
+    train.cars.forEach(function (car, i) {
+      car.el.style.transform = 'translateX(' + car.x.toFixed(1) + 'px)';
+      car.el.classList.toggle('late', i === train.at && car.x < train.step);
+    });
+  }
+
+  function tick(now) {
+    train.raf = 0;
+    if (!train.nonstop || state.screen !== 'train') return;
+
+    // While you are marking a drawing, the train waits. A long gap between
+    // frames - the phone put down, another app opened - pauses it rather than
+    // jumping it forward.
+    if (train.last && !train.revealed) {
+      var secs = Math.min(0.1, (now - train.last) / 1000);
+      var dx = train.speed / 60 * train.step * secs;
+      train.cars.forEach(function (car) { car.x -= dx; });
+    }
+    train.last = now;
+
+    var front = train.cars[train.at];
+    if (front && front.x < 0 && !train.revealed) missedFront();
+
+    // Gone off the left: drop them, keeping train.at on the same carriage.
+    while (train.at > 0 && train.cars[0].x < -train.step) {
+      var gone = train.cars.shift();
+      gone.el.parentNode.removeChild(gone.el);
+      train.at--;
+    }
+    fillTrack();
+    placeCars();
+    train.raf = requestAnimationFrame(tick);
+  }
+
+  // Too late - a miss, the same as giving up on it.
+  function missedFront() {
+    if (train.draw) {
+      train.stroke = null;
+      gradeDrawn(false);
+    } else {
+      trainInput.value = '';
+      answerCar('');
+    }
+  }
+
+  function changeSpeed(correct) {
+    var v = train.speed * (correct ? TRAIN_FASTER : TRAIN_SLOWER);
+    train.speed = Math.min(TRAIN_FASTEST, Math.max(TRAIN_SLOWEST, v));
+    state.trainSpeed[train.draw ? 'draw' : 'type'] = Math.round(train.speed * 10) / 10;
+    showSpeed();
+  }
+
+  function showSpeed() {
+    $('trainTitle').textContent = train.nonstop
+      ? 'Train · ' + Math.round(train.speed) + '/min'
+      : 'Train';
+  }
+
+  // Turning the phone changes the width of the track. Everything is scaled
+  // to match, so the train carries on from the same place.
+  function resizeTrack() {
+    var old = train.step;
+    measureTrack();
+    if (!old || !train.step) return;
+    train.cars.forEach(function (car) {
+      car.x *= train.step / old;
+      car.el.style.width = (train.step - CAR_GAP) + 'px';
+    });
+    sizeTrack();
+    fillTrack();
+    placeCars();
+  }
 
   // ---------- write ----------
   var pad = $('pad'), ctx = pad.getContext('2d');
@@ -2402,6 +2596,7 @@
     if (state.screen === 'write') sizePad();
     if (state.screen === 'copy') sizeCopy();
     if (state.screen === 'train' && train.draw) sizeTrainPad();
+    if (state.screen === 'train' && train.nonstop) resizeTrack();
   });
 
   window.addEventListener('orientationchange', function () {
@@ -2409,6 +2604,7 @@
       if (state.screen === 'write') sizePad();
       if (state.screen === 'copy') sizeCopy();
       if (state.screen === 'train' && train.draw) sizeTrainPad();
+      if (state.screen === 'train' && train.nonstop) resizeTrack();
     }, 250);
   });
 
@@ -2420,6 +2616,7 @@
   setCopyRow(state.copyRow);
   setTrainDraw(state.trainDraw);
   setTrainEach(state.trainEach);
+  setTrainNonstop(state.trainNonstop);
   updateScore();
   toHome();
 })();

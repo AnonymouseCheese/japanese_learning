@@ -306,6 +306,32 @@ On a phone the keyboard covers the bottom half of the screen, so the line and
 the typing box sit right at the top where they stay in view. Tap the line if
 the keyboard has gone away and it comes back.
 
+### Line of 8, or Non-stop
+
+The second switch, beside Type / Draw. **Line of 8** is everything above: eight
+characters, then a result. **Non-stop** is a train that keeps coming:
+
+- The carriages slide from right to left without stopping, and new ones keep
+  arriving on the right. Answer the outlined one — the first you have not
+  answered yet — before it reaches the left edge.
+- If it gets there first, that is a miss: it turns red with its answer under
+  it as it slides away, and the next one is outlined. The outline itself goes
+  red as the carriage nears the edge, as a warning.
+- There is no speed setting. Each right answer makes the train 5% faster and
+  each miss 15% slower, so it settles at whatever pace you can keep up with.
+  The speed shows at the top — `Train · 20/min` is twenty characters a
+  minute — and it is remembered, separately for typing and drawing, so next
+  time you start where you left off. Typing starts at 20 a minute, drawing at 6.
+- If you get ahead, the next carriage is waiting just off the right edge —
+  it is outlined as it slides in.
+- Every answer counts toward your progress as you go. There is no end; tap
+  **‹** when you are done, and the train stops.
+- In Draw it always checks one by one, since there is no end of the line to
+  check at, and the train waits while you tap Got it or Missed it — marking
+  yourself never costs you time.
+- Putting the phone down or switching apps pauses it rather than letting it
+  run on.
+
 ### Type or Draw
 
 A switch under the line chooses how you answer. **Type** is everything above.

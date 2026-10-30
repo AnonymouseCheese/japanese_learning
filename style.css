@@ -305,9 +305,29 @@ body {
 
 .train-result .btn { width: 100%; margin-bottom: 18px; }
 
-/* Type / Draw - small, like the switch in Copy. */
+/* Type / Draw and Line of 8 / Non-stop - small, like the switch in Copy, and
+   side by side so they only take one row. */
 .train-mode { flex: 0 0 auto; margin-top: 10px; padding: 3px; border-radius: 10px; }
 .train-mode .seg-btn { padding: 7px 4px; font-size: 13px; border-radius: 8px; }
+.train-switches { flex: 0 0 auto; display: flex; gap: 8px; margin-top: 10px; }
+.train-switches .train-mode { flex: 1 1 0; margin-top: 0; }
+
+/* Non-stop: the carriages are placed by app.js and slide along. They fade
+   in at the right as they arrive and fade out at the left as they leave. */
+.train-line.moving {
+  display: block;
+  position: relative;
+  padding: 0;
+  margin: 10px 0 2px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+}
+
+.train-line.moving .car { position: absolute; top: 2px; left: 0; will-change: transform; }
+
+/* The one you are on, about to reach the left edge. */
+.car.now.late { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
 
 /* In Draw, the ones already written are faded - their answers come at the end. */
 .car.past .car-kana { opacity: .45; }

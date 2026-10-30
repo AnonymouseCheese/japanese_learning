@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Hiragana">
 <meta name="theme-color" content="#12131a">
 <title>Hiragana Practice</title>
-<link rel="stylesheet" href="style.css?v=32">
+<link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
 
@@ -153,14 +153,20 @@
 <section id="trainScreen" class="screen hidden">
   <header class="bar">
     <button class="back" data-back="menu" aria-label="Back to menu">‹</button>
-    <span class="bar-title">Train</span>
+    <span class="bar-title" id="trainTitle">Train</span>
     <span class="bar-actions"><button class="mini" data-chart>chart</button></span>
     <span class="score"><b class="js-right">0</b> / <span class="js-total">0</span></span>
   </header>
   <div id="trainLine" class="train-line"></div>
-  <div class="seg train-mode">
-    <button id="trainType" class="seg-btn">Type</button>
-    <button id="trainDraw" class="seg-btn">Draw</button>
+  <div class="train-switches">
+    <div class="seg train-mode">
+      <button id="trainType" class="seg-btn">Type</button>
+      <button id="trainDraw" class="seg-btn">Draw</button>
+    </div>
+    <div class="seg train-mode">
+      <button id="trainEight" class="seg-btn">Line of 8</button>
+      <button id="trainNonstop" class="seg-btn">Non-stop</button>
+    </div>
   </div>
   <div id="trainCheckMode" class="seg train-mode hidden">
     <button id="trainEach" class="seg-btn">Check one by one</button>
@@ -396,9 +402,9 @@
   </div>
 </section>
 
-<script src="data.js?v=32"></script>
-<script src="words.js?v=32"></script>
-<script src="sentences.js?v=32"></script>
-<script src="app.js?v=32"></script>
+<script src="data.js?v=33"></script>
+<script src="words.js?v=33"></script>
+<script src="sentences.js?v=33"></script>
+<script src="app.js?v=33"></script>
 </body>
 </html>
