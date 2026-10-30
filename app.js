@@ -521,7 +521,7 @@
     type: 'Press space after each sound. Stuck on one? Press next (or Enter) with nothing typed and it shows you.',
     draw: 'Write the sound of the outlined character, then Next. Stuck? Next with nothing written. You check them all at the end.',
     each: 'Write the sound, then Check to see the answer. Stuck? Check with nothing written.',
-    moveType: 'Type each sound before it reaches the left. Right answers speed the train up, misses slow it down.',
+    moveType: 'Type each sound before it reaches the left. The train speeds up or slows down to match you.',
     moveDraw: 'Write each sound and Check before it reaches the left. The train waits while you mark it.'
   };
 
@@ -546,6 +546,8 @@
     width: 0,          // non-stop: the width of the track, in pixels
     step: 0,           // non-stop: one carriage and the gap after it, in pixels
     last: 0,           // non-stop: the time of the last frame
+    clock: 0,          // non-stop: seconds the train has been running, not counting pauses
+    answeredAt: 0,     // non-stop: the clock at your last answer, to time the next one
     raf: 0             // non-stop: the next frame, so it can be cancelled
   };
 
@@ -1024,24 +1026,34 @@
   // answered yet; if it reaches the left edge before you answer it, it is a
   // miss, and its answer shows in red as it slides away.
   //
-  // There is no speed setting. Every right answer makes the train a little
-  // faster and every miss slows it down, so it settles at whatever pace you
-  // can keep up with. The speed is remembered, separately for typing and
-  // drawing, so you start where you left off.
-  var TRAIN_FASTER = 1.05;     // after a right answer
-  var TRAIN_SLOWER = 0.85;     // after a miss - a miss counts for more, so it recovers quickly
+  // There is no speed setting. Each right answer is timed, and the train's
+  // speed moves a good part of the way toward the pace you answered at - so it is
+  // never long before it matches you, faster or slower. A miss slows it down.
+  // The speed is remembered, separately for typing and drawing, so you start
+  // where you left off.
+  //
+  // And you never wait for it. The one you are on is meant to be read about
+  // three carriages in from the left; if you are ahead and it is still further
+  // right than that, the train hurries to bring it there. So each answer
+  // shunts the train along as fast as you go.
+  var TRAIN_FOLLOW = 0.4;      // how far toward your pace each right answer moves it
+  var TRAIN_SLOWER = 0.85;     // after a miss
   var TRAIN_SLOWEST = 3;       // characters a minute
   var TRAIN_FASTEST = 90;
+  var TRAIN_READ_AT = 3;       // where the one you are on sits, in carriages from the left
+  var TRAIN_CATCH_UP = 8;      // how quickly it closes the gap when you are ahead - a fifth of a second or so
   var CAR_GAP = 5;             // the gap between carriages - the same as in style.css
 
   function startMoving() {
     train.speed = state.trainSpeed[train.draw ? 'draw' : 'type'];
     measureTrack();
-    // The left of the track starts empty, so there is time to read the first.
-    fillTrack(train.step * 3);
+    // The left of the track starts empty, so the first is already in place.
+    fillTrack(train.step * TRAIN_READ_AT);
     sizeTrack();
     placeCars();
     train.last = 0;
+    train.clock = 0;
+    train.answeredAt = 0;
     train.raf = requestAnimationFrame(tick);
   }
 
@@ -1091,14 +1103,18 @@
     // While you are marking a drawing, the train waits. A long gap between
     // frames - the phone put down, another app opened - pauses it rather than
     // jumping it forward.
+    var front = train.cars[train.at];
     if (train.last && !train.revealed) {
       var secs = Math.min(0.1, (now - train.last) / 1000);
+      train.clock += secs;
       var dx = train.speed / 60 * train.step * secs;
+      // Ahead of the train: close the gap, quickly at first and easing in.
+      var ahead = front ? front.x - dx - train.step * TRAIN_READ_AT : 0;
+      if (ahead > 0) dx += ahead * Math.min(1, TRAIN_CATCH_UP * secs);
       train.cars.forEach(function (car) { car.x -= dx; });
     }
     train.last = now;
 
-    var front = train.cars[train.at];
     if (front && front.x < 0 && !train.revealed) missedFront();
 
     // Gone off the left: drop them, keeping train.at on the same carriage.
@@ -1123,8 +1139,17 @@
     }
   }
 
+  // Your pace on this one, in characters a minute, from the time since your
+  // last answer. Several typed in one go - "ka ki ku " - take no time at
+  // all, which counts as as fast as the train goes.
   function changeSpeed(correct) {
-    var v = train.speed * (correct ? TRAIN_FASTER : TRAIN_SLOWER);
+    var took = train.clock - train.answeredAt;
+    train.answeredAt = train.clock;
+    var v = train.speed * TRAIN_SLOWER;
+    if (correct) {
+      var pace = took > 0 ? Math.min(TRAIN_FASTEST, 60 / took) : TRAIN_FASTEST;
+      v = train.speed + (pace - train.speed) * TRAIN_FOLLOW;
+    }
     train.speed = Math.min(TRAIN_FASTEST, Math.max(TRAIN_SLOWEST, v));
     state.trainSpeed[train.draw ? 'draw' : 'type'] = Math.round(train.speed * 10) / 10;
     showSpeed();

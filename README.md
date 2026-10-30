@@ -317,13 +317,21 @@ characters, then a result. **Non-stop** is a train that keeps coming:
 - If it gets there first, that is a miss: it turns red with its answer under
   it as it slides away, and the next one is outlined. The outline itself goes
   red as the carriage nears the edge, as a warning.
-- There is no speed setting. Each right answer makes the train 5% faster and
-  each miss 15% slower, so it settles at whatever pace you can keep up with.
-  The speed shows at the top — `Train · 20/min` is twenty characters a
+- **You never wait for it.** The one you are on sits about three carriages in
+  from the left. Answer it and, if the next one is still further right than
+  that, the train hurries to bring it there in a fraction of a second, then
+  carries on at its normal speed. So every answer shunts the train along, as
+  fast as you go.
+- **It matches your pace.** There is no speed setting. Each right answer is
+  timed, and the speed moves 40% of the way toward the pace you answered at —
+  answer at 60 a minute and within a few answers the train is close to 60;
+  slow down on a hard one and it eases off. Each miss slows it by 15%.
+- The speed shows at the top — `Train · 20/min` is twenty characters a
   minute — and it is remembered, separately for typing and drawing, so next
   time you start where you left off. Typing starts at 20 a minute, drawing at 6.
-- If you get ahead, the next carriage is waiting just off the right edge —
-  it is outlined as it slides in.
+- The first version only sped up 5% per right answer and made you wait for
+  each new carriage to crawl in at the train's speed, so a quick reader spent
+  most of the time waiting.
 - Every answer counts toward your progress as you go. There is no end; tap
   **‹** when you are done, and the train stops.
 - In Draw it always checks one by one, since there is no end of the line to
