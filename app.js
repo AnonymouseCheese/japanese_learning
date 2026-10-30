@@ -521,8 +521,8 @@
     type: 'Press space after each sound. Stuck on one? Press next (or Enter) with nothing typed and it shows you.',
     draw: 'Write the sound of the outlined character, then Next. Stuck? Next with nothing written. You check them all at the end.',
     each: 'Write the sound, then Check to see the answer. Stuck? Check with nothing written.',
-    moveType: 'Type each sound before it reaches the left. The train speeds up or slows down to match you.',
-    moveDraw: 'Write each sound and Check before it reaches the left. The train waits while you mark it.'
+    moveType: 'Type each sound. The train waits at the platform in the middle until you answer.',
+    moveDraw: 'Write each sound, then Check. The train waits at the platform until you have marked it.'
   };
 
   // Accepted as well as the spelling the app shows. These are the other usual
@@ -1021,10 +1021,17 @@
   $('trainDrawNext').addEventListener('click', trainDrawNext);
 
   // ----- train: non-stop -----
-  // The carriages slide from right to left without stopping, and new ones
-  // keep arriving on the right. The outlined one is the first you have not
-  // answered yet; if it reaches the left edge before you answer it, it is a
-  // miss, and its answer shows in red as it slides away.
+  // The carriages slide from right to left, and new ones keep arriving on the
+  // right. The outlined one is the first you have not answered yet.
+  //
+  // In the middle of the track is a platform, two carriages wide. The one you
+  // are on rolls onto it and the train stops at the far end and waits for you
+  // - it never runs out of time and turns red by itself. Only a wrong answer,
+  // or giving up on one, is a miss. So the track reads left to right: what you
+  // have answered, the one you are on at the platform, and what is coming.
+  //
+  // The first version had no platform: the train ran on to the left edge, and
+  // anything still unanswered there was marked a miss.
   //
   // There is no speed setting. Each right answer is timed, and the train's
   // speed moves a good part of the way toward the pace you answered at - so it is
@@ -1032,24 +1039,28 @@
   // The speed is remembered, separately for typing and drawing, so you start
   // where you left off.
   //
-  // And you never wait for it. The one you are on is meant to be read about
-  // three carriages in from the left; if you are ahead and it is still further
-  // right than that, the train hurries to bring it there. So each answer
+  // And you never wait for it. If you are ahead, and the next one is not at
+  // the platform yet, the train hurries to bring it there. So each answer
   // shunts the train along as fast as you go.
   var TRAIN_FOLLOW = 0.4;      // how far toward your pace each right answer moves it
   var TRAIN_SLOWER = 0.85;     // after a miss
   var TRAIN_SLOWEST = 3;       // characters a minute
   var TRAIN_FASTEST = 90;
-  var TRAIN_READ_AT = 3;       // where the one you are on sits, in carriages from the left
+  var PLATFORM_IN = 4;         // where the platform starts, in carriages from the left
+  var PLATFORM_STOP = 3;       // where the train stops at the far end of it
   var TRAIN_CATCH_UP = 8;      // how quickly it closes the gap when you are ahead - a fifth of a second or so
   var CAR_GAP = 5;             // the gap between carriages - the same as in style.css
 
   function startMoving() {
     train.speed = state.trainSpeed[train.draw ? 'draw' : 'type'];
     measureTrack();
-    // The left of the track starts empty, so the first is already in place.
-    fillTrack(train.step * TRAIN_READ_AT);
+    var platform = document.createElement('div');   // drawn first, so it sits behind the carriages
+    platform.className = 'train-platform';
+    $('trainLine').appendChild(platform);
+    // The left of the track starts empty, and the first is pulling in.
+    fillTrack(train.step * PLATFORM_IN);
     sizeTrack();
+    placePlatform();
     placeCars();
     train.last = 0;
     train.clock = 0;
@@ -1088,12 +1099,19 @@
     }
   }
 
-  // The one you are on goes red as it nears the end - a warning to hurry.
   function placeCars() {
-    train.cars.forEach(function (car, i) {
+    train.cars.forEach(function (car) {
       car.el.style.transform = 'translateX(' + car.x.toFixed(1) + 'px)';
-      car.el.classList.toggle('late', i === train.at && car.x < train.step);
     });
+  }
+
+  // The platform covers the two middle carriage spaces, with a little to
+  // spare round the edges.
+  function placePlatform() {
+    var platform = $('trainLine').querySelector('.train-platform');
+    if (!platform) return;
+    platform.style.left = (train.step * PLATFORM_STOP - 4) + 'px';
+    platform.style.width = (train.step * (PLATFORM_IN - PLATFORM_STOP + 1) - CAR_GAP + 8) + 'px';
   }
 
   function tick(now) {
@@ -1108,14 +1126,17 @@
       var secs = Math.min(0.1, (now - train.last) / 1000);
       train.clock += secs;
       var dx = train.speed / 60 * train.step * secs;
-      // Ahead of the train: close the gap, quickly at first and easing in.
-      var ahead = front ? front.x - dx - train.step * TRAIN_READ_AT : 0;
-      if (ahead > 0) dx += ahead * Math.min(1, TRAIN_CATCH_UP * secs);
+      if (front) {
+        // Ahead of the train: close the gap to the platform, quickly at first
+        // and easing in.
+        var ahead = front.x - dx - train.step * PLATFORM_IN;
+        if (ahead > 0) dx += ahead * Math.min(1, TRAIN_CATCH_UP * secs);
+        // ...and stop at the far end of it until you answer.
+        dx = Math.min(dx, Math.max(0, front.x - train.step * PLATFORM_STOP));
+      }
       train.cars.forEach(function (car) { car.x -= dx; });
     }
     train.last = now;
-
-    if (front && front.x < 0 && !train.revealed) missedFront();
 
     // Gone off the left: drop them, keeping train.at on the same carriage.
     while (train.at > 0 && train.cars[0].x < -train.step) {
@@ -1126,17 +1147,6 @@
     fillTrack();
     placeCars();
     train.raf = requestAnimationFrame(tick);
-  }
-
-  // Too late - a miss, the same as giving up on it.
-  function missedFront() {
-    if (train.draw) {
-      train.stroke = null;
-      gradeDrawn(false);
-    } else {
-      trainInput.value = '';
-      answerCar('');
-    }
   }
 
   // Your pace on this one, in characters a minute, from the time since your
@@ -1173,6 +1183,7 @@
     });
     sizeTrack();
     fillTrack();
+    placePlatform();
     placeCars();
   }
 

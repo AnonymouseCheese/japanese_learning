@@ -326,8 +326,15 @@ body {
 
 .train-line.moving .car { position: absolute; top: 2px; left: 0; will-change: transform; }
 
-/* The one you are on, about to reach the left edge. */
-.car.now.late { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+/* The platform in the middle, where the train stops and waits for you. app.js
+   sets where it starts and how wide it is. */
+.train-platform {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--accent-soft);
+  border-radius: 12px;
+}
 
 /* In Draw, the ones already written are faded - their answers come at the end. */
 .car.past .car-kana { opacity: .45; }

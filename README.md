@@ -311,21 +311,26 @@ the keyboard has gone away and it comes back.
 The second switch, beside Type / Draw. **Line of 8** is everything above: eight
 characters, then a result. **Non-stop** is a train that keeps coming:
 
-- The carriages slide from right to left without stopping, and new ones keep
-  arriving on the right. Answer the outlined one — the first you have not
-  answered yet — before it reaches the left edge.
-- If it gets there first, that is a miss: it turns red with its answer under
-  it as it slides away, and the next one is outlined. The outline itself goes
-  red as the carriage nears the edge, as a warning.
-- **You never wait for it.** The one you are on sits about three carriages in
-  from the left. Answer it and, if the next one is still further right than
-  that, the train hurries to bring it there in a fraction of a second, then
-  carries on at its normal speed. So every answer shunts the train along, as
-  fast as you go.
+- The carriages slide from right to left, and new ones keep arriving on the
+  right. Answer the outlined one — the first you have not answered yet.
+- **The platform.** In the middle of the track is a highlighted platform, two
+  carriages wide. The one you are on rolls onto it, and the train stops at the
+  far end and waits there until you answer. Nothing ever runs out of time and
+  turns red by itself — only a wrong answer, or giving up on one, is a miss.
+  So the track reads left to right: what you have answered, the one you are
+  on, and what is coming.
+- The first version had no platform: the train ran on to the left edge, and
+  anything still unanswered there was marked a miss.
+- **You never wait for it.** Answer one and, if the next has not reached the
+  platform yet, the train hurries to bring it there in a fraction of a second,
+  then rolls along the platform at its normal speed. So every answer shunts
+  the train along, as fast as you go.
 - **It matches your pace.** There is no speed setting. Each right answer is
   timed, and the speed moves 40% of the way toward the pace you answered at —
   answer at 60 a minute and within a few answers the train is close to 60;
-  slow down on a hard one and it eases off. Each miss slows it by 15%.
+  slow down on a hard one and it eases off. Each miss slows it by 15%. The
+  speed is how fast it rolls along the platform; a slower one gives you
+  longer to read before it stops.
 - The speed shows at the top — `Train · 20/min` is twenty characters a
   minute — and it is remembered, separately for typing and drawing, so next
   time you start where you left off. Typing starts at 20 a minute, drawing at 6.
