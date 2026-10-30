@@ -299,8 +299,14 @@ weak on, never the same one within three of itself, and following the
 character picker. Every answer feeds your progress, so a miss here brings the
 character up more often everywhere else.
 
-The **chart** button works as it does in Identify: opening it abandons the line
-and you come back to a new one.
+The **chart** button opens the chart to look things up or memorise from, and
+**back** returns you to the line exactly as you left it — the same characters,
+your answers so far, anything half typed or drawn, and in Non-stop the train
+where it was. The time spent looking is not counted, in the seconds at the
+end of a line or against your pace. (Identify and Write are different: there
+the chart drops the question on screen, so it cannot be used to look up the
+answer.) The first version started a new line after the chart, which threw
+away what you were in the middle of.
 
 On a phone the keyboard covers the bottom half of the screen, so the line and
 the typing box sit right at the top where they stay in view. Tap the line if

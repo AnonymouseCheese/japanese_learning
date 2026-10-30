@@ -545,6 +545,7 @@
     speed: 0,          // non-stop: characters a minute
     width: 0,          // non-stop: the width of the track, in pixels
     step: 0,           // non-stop: one carriage and the gap after it, in pixels
+    pausedAt: 0,       // when the chart was opened, so time spent looking is not counted
     last: 0,           // non-stop: the time of the last frame
     clock: 0,          // non-stop: seconds the train has been running, not counting pauses
     answeredAt: 0,     // non-stop: the clock at your last answer, to time the next one
@@ -588,6 +589,7 @@
       for (var i = 0; i < TRAIN_LENGTH; i++) addCar();
     }
     train.started = Date.now();
+    train.pausedAt = 0;
     train.done = false;
     train.settled = false;
     train.draw = state.trainDraw;
@@ -612,6 +614,27 @@
     showSpeed();
     markCar();
     if (draw) { requestAnimationFrame(sizeTrainPad); } else { trainInput.focus(); }
+  }
+
+  // Back from the chart. Everything is exactly as you left it - the line,
+  // your answers, what you had typed or drawn, where the train had got to.
+  // The time spent looking is not counted: not in the seconds at the end of
+  // a line, and not against your pace in non-stop.
+  //
+  // The first version started a new line instead, the same as Identify and
+  // Write - but here the chart is for learning from, mid-line.
+  function resumeTrain() {
+    show('train');
+    if (train.pausedAt) {
+      train.started += Date.now() - train.pausedAt;
+      train.pausedAt = 0;
+    }
+    if (train.nonstop && !train.raf) {
+      resizeTrack();                 // in case the phone was turned meanwhile
+      train.last = 0;                // so the first frame back does not jump
+      train.raf = requestAnimationFrame(tick);
+    }
+    if (train.draw) { requestAnimationFrame(sizeTrainPad); } else { trainInput.focus(); }
   }
 
   // The next character onto the end of the train.
@@ -1918,6 +1941,7 @@
 
   function openChart() {
     state.chartFrom = state.screen;
+    if (state.screen === 'train') train.pausedAt = Date.now();
     $('refTitle').textContent = current.name + ' chart';
     $('refHint').textContent = soundOn()
       ? 'Tap a character to hear it. Switched-off characters are shown with a dashed outline.'
@@ -1927,7 +1951,8 @@
   }
 
   // Coming back starts a fresh question - the one that was on screen is dropped,
-  // neither right nor wrong.
+  // neither right nor wrong. Train is the exception: there the chart is for
+  // learning from, so you come back to the line exactly as you left it.
   function closeChart() {
     if (state.chartFrom === 'menu') {
       toMenu();
@@ -1938,8 +1963,7 @@
       nextWrite();
       requestAnimationFrame(sizePad);
     } else if (state.chartFrom === 'train') {
-      show('train');
-      newTrain();
+      resumeTrain();
     } else {
       show('read');
       nextRead();
